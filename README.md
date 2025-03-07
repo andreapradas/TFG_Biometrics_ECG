@@ -25,16 +25,19 @@ The extracted features and classification results will be stored in the outputs 
 Performance metrics include accuracy, precision, recall, and F1-score.
 Example output graphs can be found in outputs/.
 ## 🏆 Key Features
-Preprocessing: FIR filters, Gaussian Notch Filter, Baseline Wander Removal.
+Preprocessing: FIR high pass filter, Gaussian Notch filter, Baseline Wander Removal filter and Band pass filter.
 Feature Extraction: Pan-Tompkins QRS detection, DWT, and AC+DCT.
 Machine Learning: KNN and Random Forest classifiers.
 ## 📜 References
 MIT-BIH Arrhythmia Database: https://www.physionet.org/content/mitdb/
-Wavelet-based feature extraction for ECG: [Relevant Papers]
-Pan-Tompkins Algorithm: [Relevant Papers]
+
+
+
+
+
 ## 📩 Contact
 For any questions or contributions, feel free to reach out!
 
-🔹 Author: Your Name
-🔹 Institution: Your University
-🔹 Email: your.email@example.com
+🔹 Author: Andrea Pradas Agujetas
+🔹 Institution: CEU San Pablo
+🔹 Email: apradasagujetas@gmail.com
