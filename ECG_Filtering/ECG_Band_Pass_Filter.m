@@ -14,11 +14,10 @@
 % Returns:
 %   filteredsignal - The ECG signal after applying both the high-pass and low-pass filters.
     
-function [filteredsignal]=ECG_Band_Pass_Filter(signal,fs,highpass_frequency,lowpass_frequency)
-   
-    % Apply high-pass filter to remove low-frequency noise
-    filteredsignal = ECG_High_Filter(signal,fs,highpass_frequency);
-    
+function [filtered_signal]=ECG_Band_Pass_Filter(signal,fs,highpass_freq,lowpass_freq, gr)
     % Apply low-pass filter to remove high-frequency noise
-    filteredsignal = ECG_Low_Filter(filteredsignal,fs,lowpass_frequency);
+    filtered_signal = ECG_LowPass_Filter(signal,fs,lowpass_freq, gr);
+
+    % Apply high-pass filter to remove low-frequency noise
+    filtered_signal = ECG_HighPass_Filter(filtered_signal,fs,highpass_freq, gr);
 end

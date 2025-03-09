@@ -10,7 +10,7 @@
 %
 function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs)
     utils = ECGutils;
-    %% RR interval --> Pan-tompkin
+    %% RR interval --> Pan-tompkins
     [~, qrs_i_raw, ~] = Pan_Tompkins(ecg_filtered, fs, 0);
     t = (0:length(ecg_filtered)-1) / fs;
     utils.plotTimeDomain(t, ecg_filtered, 'R Peak Detection', 'b');
@@ -63,16 +63,15 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs)
     
     
     %% Wavelet Transform
-    [wavelet_ecg] = ECG_Wavelet_Transform(ecg_filtered, fs);
-    
-    
-    
-    %% Add patient's features to the its structure
+    [wavelet_features] = ECG_DWT(ecg_filtered, 'db3', 5, 1);
+  
+    %% Add patient's features to its structure
     patient_ecg_features = struct();
+
     patient_ecg_features.RR_intervals = RR_intervals; 
 
     patient_ecg_features.dct_coef = dct_coef;
 
-    patient_ecg_features.wavelet_ecg = wavelet_ecg;
+    patient_ecg_features.wavelet_features = wavelet_features;
 
 end
