@@ -20,17 +20,16 @@ function [dct_coef, K, rxx_norm, Sxx, lags] = ECG_AC_DCT(ecg_signal, energy_thre
     %% Signal Energy
     N = length(ecg_signal);
     Ex = sum(abs(ecg_signal).^2);
-    disp(['Signal Energy: ', num2str(Ex)]);
 
-    %% Autocorrelation rxx[k]
+    %% Autocorrelation Rxx[k]
     rxx = xcorr(ecg_signal, 'biased'); % Compute biased autocorrelation
     lags = -N+1:N-1; % Dimension of the AC is 1.3M (computationally high)
 
     % Normalize the autocorrelation
-    rxx_norm = rxx / max(rxx); % Normalize by maximum amplitude
+    rxx_norm = rxx / max(rxx); % Normalize by maximum amplitude usually Rxx[0]
 
     %% Apply Discrete Cosine Transform (DCT)
-    Y = dct(rxx_norm); % DCT de la autocorrelación
+    Y = dct(rxx_norm); 
 
      % Compute cumulative energy
     Y_energy = cumsum(Y.^2) / sum(Y.^2);
@@ -62,8 +61,8 @@ function [dct_coef, K, rxx_norm, Sxx, lags] = ECG_AC_DCT(ecg_signal, energy_thre
         figure;
         plot(Y_energy, 'b', 'LineWidth', 2); 
         hold on;
-        yline(energy_threshold, 'r--', 'LineWidth', 2); % Umbral de energía
-        xline(K, 'g--', 'LineWidth', 2); % K óptimo
+        yline(energy_threshold, 'r--', 'LineWidth', 2);
+        xline(K, 'g--', 'LineWidth', 2); 
         xlabel('Number of DCT Coefficients');
         ylabel('Cumulative Energy');
         title('Cumulative Energy of DCT Coefficients');

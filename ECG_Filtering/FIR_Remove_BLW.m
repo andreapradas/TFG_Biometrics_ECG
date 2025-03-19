@@ -30,7 +30,6 @@ function [ECG_Clean] = FIR_Remove_BLW(ecg,fs,fc, gr)
     b = fir1(n, Wn, ftype, kaiser(n + 1, beta), 'noscale');
     a = 1; % FIR filter (denominator is 1)
     
-    freqz(b, a, n, fs);
     [H, F] = freqz(b, a, n, fs);
 
     % Apply zero-phase filtering to avoid phase distortion
