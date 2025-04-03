@@ -12,7 +12,7 @@
 function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
     utils = ECGutils;
     %% RR interval --> Pan-tompkins
-    [~, qrs_i_raw, ~] = Pan_Tompkins(ecg_filtered, fs, gr);
+    [~, qrs_i_raw, ~] = ECG_Pan_Tompkins(ecg_filtered, fs, gr);
     t = (0:length(ecg_filtered)-1) / fs;
     RR_intervals = diff(t(qrs_i_raw));
    

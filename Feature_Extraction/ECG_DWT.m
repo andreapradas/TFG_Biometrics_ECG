@@ -7,8 +7,8 @@
 %   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
 %
 % Returns:
-%   wavelet_features - Matrix containing the mean and standard deviation 
-%                     of the approximation and detail coefficients.
+%   wavelet_features - Vector containing the approximation coefficients 
+%                      extracted from the ECG signal.
 %
 function [wavelet_features] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, gr)
     % Perform the Discrete Wavelet Transform (DWT) decomposition
@@ -18,12 +18,12 @@ function [wavelet_features] = ECG_DWT(ecg_signal, wavelet_name, decomposition_le
     approx_coeffs = appcoef(C, L, wavelet_name, decomposition_level);
     approx_coeffs = approx_coeffs(:);
 
-    % Initialize the wavelet features vector
-    wavelet_features = [];
+    % wavelet_features = [];
     
     % Add the mean and standard deviation of approximation coefficients
-    wavelet_features = [wavelet_features; mean(approx_coeffs), std(approx_coeffs)];
+    % wavelet_features = [wavelet_features; mean(approx_coeffs), std(approx_coeffs)];
 
+    wavelet_features = approx_coeffs;
     % Extract detail coefficients (D1 to Dn)
     detail_coeffs = cell(1, decomposition_level);
     for i = 1:decomposition_level
@@ -31,7 +31,7 @@ function [wavelet_features] = ECG_DWT(ecg_signal, wavelet_name, decomposition_le
         detail_coeffs{i} = detail_coeffs{i}(:);
         
         % Add the mean and standard deviation of detail coefficients at level i
-        wavelet_features = [wavelet_features; mean(detail_coeffs{i}), std(detail_coeffs{i})];
+        % wavelet_features = [wavelet_features; mean(detail_coeffs{i}), std(detail_coeffs{i})];
     end
     if gr
         figure;

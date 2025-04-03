@@ -21,8 +21,8 @@ fileList = dir("*.hea");
 numPatients = length(fileList);
 patients_features(numPatients) = struct('patientID', '', 'features', []);
 
-
-for i = 1:1
+%% Process all the ECG recordings at a time
+for i = 1:numPatients
     patientID = erase(fileList(i).name, ".hea");
     
     try
@@ -32,7 +32,7 @@ for i = 1:1
         continue;
     end
 
-    gr = 1; % Flag to generate plots (1 = plot, 0 = no plot)
+    gr = 0; % Flag to generate plots (1 = plot, 0 = no plot)
     t = (0:length(raw_ecg)-1) / fs; % Time in seconds
     
     % Plot the raw ecg signal in TIME domain

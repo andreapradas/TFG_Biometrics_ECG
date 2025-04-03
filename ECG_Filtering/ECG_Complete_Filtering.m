@@ -21,7 +21,8 @@ function [ecg_filtered] = ECG_Complete_Filtering(raw_ecg,fs, gr)
     %% Powerline interference removal --> Notch Filter 60 Hz
     f0 = 60; % In USA 
     width = 1; % Bandwidth of the notch filter
-    ecg_noPowerline = Gaussian_Notch_Filter(raw_ecg, fs, f0, width);
+    ecg_noPowerline = ECG_Gaussian_Notch_Remove_PLI(raw_ecg, fs, f0, width, gr);
+    % ecg_noPowerline = ECG_IIR_Remove_PLI(raw_ecg, fs, f0, gr);
     t = (0:length(raw_ecg)-1) / fs; % Time in seconds
 
     if gr
@@ -45,7 +46,7 @@ function [ecg_filtered] = ECG_Complete_Filtering(raw_ecg,fs, gr)
     end 
     %% Baseline Wander removal --> FIR high-pass filter
     fc = 0.67; % Cut-off frequency 
-    ecg_noBLW = FIR_Remove_BLW(ecg_noPowerline,fs,fc,gr);
+    ecg_noBLW = ECG_FIR_Remove_BLW(ecg_noPowerline,fs,fc,gr);
     
     if gr
         utils.plotComparison(t,ecg_noPowerline,ecg_noBLW,'No PI ECG', 'No BW ECG');
