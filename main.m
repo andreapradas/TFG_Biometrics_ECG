@@ -19,7 +19,7 @@ addpath(genpath('..'));% To aggregate the main folder + directories
 cd("Database\physionet.org\files\mitdb\1.0.0\");
 fileList = dir("*.hea");  
 numPatients = length(fileList);
-patients_features(numPatients) = struct('patientID', '', 'features', []);
+patients_struct(numPatients) = struct('patientID', '', 'features', []);
 
 %% Process all the ECG recordings at a time
 for i = 1:numPatients
@@ -33,10 +33,10 @@ for i = 1:numPatients
     end
 
     gr = 0; % Flag to generate plots (1 = plot, 0 = no plot)
-    t = (0:length(raw_ecg)-1) / fs; % Time in seconds
-    
+  
     % Plot the raw ecg signal in TIME domain
     if gr
+        t = (0:length(raw_ecg)-1) / fs; % Time in seconds
         utils.plotTimeDomain(t, raw_ecg, 'Raw ECG Signal', 'b');
     end
     %% Normalization of the signal
@@ -49,10 +49,9 @@ for i = 1:numPatients
         xlim([0 0.7]);
     end
     %% FFT (Freq. domain)
-    
-    [f, module, phase] = utils.computeFFT(raw_ecg, fs);
-    
+        
     if gr
+        [f, module, phase] = utils.computeFFT(raw_ecg, fs);
         % Subplot with Magnitude and Phase of the FFT
         figure;
         subplot(2,1,1);
@@ -78,17 +77,14 @@ for i = 1:numPatients
     %% Feature Extraction (RR interval + AC/DCT + Wavelet Transform)
     
     patient_ecg_features = ECG_Feature_Extraction(ecg_filtered, fs, gr);
-    patients_features(i).patientID = patientID;
-    patients_features(i).features = patient_ecg_features;
+    patients_struct(i).patientID = patientID;
+    patients_struct(i).features = patient_ecg_features;
     
-
     fprintf("Patient %s processed successfully.\n", patientID);
 
 end
 
 cd("..\..\..\..\..\"); % Return to the main directory
-save("patients_features.mat", "patients_features");
+save("patients_features.mat", "patients_struct");
 
 %% Identification (k-NN + SVM)
-
-

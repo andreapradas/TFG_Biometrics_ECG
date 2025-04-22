@@ -10,6 +10,7 @@
 %   wavelet_features - Vector containing the approximation coefficients 
 %                      extracted from the ECG signal.
 %
+
 function [wavelet_features] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, gr)
     % Perform the Discrete Wavelet Transform (DWT) decomposition
     [C, L] = wavedec(ecg_signal, decomposition_level, wavelet_name);

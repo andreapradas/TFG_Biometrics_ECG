@@ -57,19 +57,22 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
     end
     
     %% Autocorrelation + Dimension Reduction (DCT)
-    [dct_coef, K, rxx_norm, Sxx, lags] = ECG_AC_DCT(ecg_filtered, 0.95, gr); 
-    
+    % energy_threshold = 0.99;
+    L = 300; % Number of AC coeficientes
+    [AC_DCT_coef, rxx_norm, Sxx, lags] = ECG_AC_DCT(ecg_filtered, L, fs, gr); 
     
     %% Discrete Wavelet Transform
-    [wavelet_features] = ECG_DWT(ecg_filtered, 'db3', 5, gr);
+    wavelet_name = 'db3';
+    decomposition_level = 5; 
+    [DWT_features] = ECG_DWT(ecg_filtered, wavelet_name, decomposition_level, gr);
   
     %% Add patient's features to its structure
     patient_ecg_features = struct();
 
     patient_ecg_features.RR_intervals = RR_intervals; 
 
-    patient_ecg_features.dct_coef = dct_coef;
+    patient_ecg_features.AC_DCT_coef = AC_DCT_coef;
 
-    patient_ecg_features.wavelet_features = wavelet_features;
+    patient_ecg_features.DWT_features = DWT_features;
 
 end

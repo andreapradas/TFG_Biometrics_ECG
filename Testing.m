@@ -9,12 +9,13 @@ addpath(genpath('..'));% To aggregate the main folder + directories
 cd("Database\physionet.org\files\mitdb\1.0.0\");
 fileList = dir("*.hea");  
 numPatients = length(fileList);
-patients_features(numPatients) = struct('patientID', '', 'features', []);
+% numPatients = 5;
+patients_struct(numPatients) = struct('patientID', '', 'features', []);
 
 
 %% Process patients + plot comparative between RAW vs FILTERED ECG
 
-for i = 1:5
+for i = 1:numPatients
     % Extract patient ID from filename
     patientID = erase(fileList(i).name, ".hea");
     
@@ -32,14 +33,19 @@ for i = 1:5
 %     utils.plotComparison(t, raw_ecg, ecg_filtered, ...
 %                    ['Raw ECG - ' patientID], ...
 %                    ['Filtered ECG - ' patientID]);
-
+%%
     patient_ecg_features = ECG_Feature_Extraction(ecg_filtered, fs, 0);
-    patients_features(i).patientID = patientID;
-    patients_features(i).features = patient_ecg_features;
+    patients_struct(i).patientID = patientID;
+    patients_struct(i).features = patient_ecg_features;
     
-
-    fprintf("Patient %s processed successfully.\n", patientID);
+    fprintf("Individual %s processed successfully.\n", patientID);
 end
 
 cd("..\..\..\..\..\");
-save("patients_features.mat", "patients_features");
+save("patients_features.mat", "patients_struct");
+
+%% Identification (kNN + SVM)
+
+
+predictedLabel = ECG_Identification(patients_struct, 1);
+
