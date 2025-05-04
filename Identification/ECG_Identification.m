@@ -5,13 +5,14 @@
 
 
 
-function [predictedLabel] = ECG_Identification(patients_struct, gr)
+function [performance_struct] = ECG_Identification(patients_struct_train, patients_struct_test, gr)
     utils = ECGutils;
-    targetLength = 2000;
-    testFraction = 0.2;
+    targetLength = 1000; % RR interval restricted length
+    % testFraction = 0.8; % Test proportion
 
     %% Prepare the dataset
-    [trainFeatures, trainLabels, testFeatures, testLabels] = prepare_ECG_dataset(patients_struct, targetLength, testFraction);
+    [trainFeatures, trainLabels] = prepare_ECG_kNN(patients_struct_train, targetLength);
+    [testFeatures, testLabels] = prepare_ECG_kNN(patients_struct_test, targetLength);
 
     trainLabels = categorical(trainLabels);
     testLabels = categorical(testLabels);
@@ -25,11 +26,17 @@ function [predictedLabel] = ECG_Identification(patients_struct, gr)
 
     %% Confusion Matrix
     cm = confusionmat(testLabels, predictedLabels);
+    totalCorrect = sum(diag(cm));
+    totalSamples = sum(cm(:));
+    accuracy = totalCorrect / totalSamples;
+
+    fprintf('\n--- Performance Metrics ---\n');
+    fprintf('Global Accuracy: %.2f%%\n', accuracy*100);
     
     if 1
         figure;
-        confusionchart(testLabels, predictedLabels, 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
-        title('Confusion Matrix for k-NN');
+        confusionchart(testLabels, predictedLabels);
+        title('Confusion Matrix for kNN');
+        xlabel('Predicted');ylabel('True');
     end
-    
 end

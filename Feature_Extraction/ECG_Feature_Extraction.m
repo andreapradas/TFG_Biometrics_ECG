@@ -1,13 +1,20 @@
-%       Feature Extraction
-% 
-%       Features: RR intervals + Autocorrelation + Wavelet Transform
-% 
-%           
-%       Input:
-%       Output:
-% %   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
-
-% 
+% ECG_Feature_Extraction extracts time-domain and frequency-domain features from an ECG signal.
+%
+% This function combines multiple techniques for ECG feature extraction, including 
+% RR interval analysis using the Pan-Tompkins algorithm, autocorrelation with DCT-based 
+% dimensionality reduction (AC/DCT), and Discrete Wavelet Transform (DWT). These features 
+% are returned in a structured format for further analysis or classification.
+%
+% Parameters:
+%   ecg_filtered - The preprocessed (filtered) ECG signal (vector).
+%   fs - Sampling frequency of the ECG signal in Hz.
+%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+%
+% Returns:
+%   patient_ecg_features - A structure containing extracted ECG features with the fields:
+%       .RR_intervals - Vector of RR intervals (in seconds) computed from R-peaks.
+%       .AC_DCT_coef - Feature vector from autocorrelation and DCT method.
+%       .DWT_features - Feature vector from the Discrete Wavelet Transform.
 %
 function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
     utils = ECGutils;
@@ -56,15 +63,15 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
         hold off;
     end
     
-    %% Autocorrelation + Dimension Reduction (DCT)
-    % energy_threshold = 0.99;
-    L = 300; % Number of AC coeficientes
-    [AC_DCT_coef, rxx_norm, Sxx, lags] = ECG_AC_DCT(ecg_filtered, L, fs, gr); 
+    %% Autocorrelation + Dimension Reduction (AC/DCT)
+    L = 60; % Number of AC coeficientes ideal for MIT-BIH dataset
+    K = 38; % Upper fc bandpass filter
+    [AC_DCT_coef, ~, ~] = ECG_AC_DCT(ecg_filtered, L, K, fs, gr); 
     
-    %% Discrete Wavelet Transform
+    %% Discrete Wavelet Transform (DWT)
     wavelet_name = 'db3';
     decomposition_level = 5; 
-    [DWT_features] = ECG_DWT(ecg_filtered, wavelet_name, decomposition_level, gr);
+    [DWT_feature] = ECG_DWT(ecg_filtered, wavelet_name, decomposition_level, gr);
   
     %% Add patient's features to its structure
     patient_ecg_features = struct();
@@ -73,6 +80,6 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
 
     patient_ecg_features.AC_DCT_coef = AC_DCT_coef;
 
-    patient_ecg_features.DWT_features = DWT_features;
+    patient_ecg_features.DWT_feature = DWT_feature;
 
 end
