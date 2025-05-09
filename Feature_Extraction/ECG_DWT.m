@@ -15,7 +15,7 @@
 %   DWT_feature - Feature vector composed of the approximation coefficients 
 %                 at the last decomposition level.
 
-function [DWT_feature] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, gr)
+function [DWT_feature] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, fs, gr)
     % Perform the Discrete Wavelet Transform (DWT) decomposition
     [C, L] = wavedec(ecg_signal, decomposition_level, wavelet_name);
 
@@ -46,7 +46,16 @@ function [DWT_feature] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, 
             ylabel('Amplitude', 'FontSize', 12);
             grid on;
         end
-        pqrst_segment = ecg_signal(1:min(160, length(ecg_signal)));
+        %% Detect PQRST complex
+        FPT = [];
+        beat_index = 78;
+        FPT = QRS_Detection(ecg_signal, fs); 
+        FPT = P_Detection(ecg_signal, fs, FPT); 
+        FPT = T_Detection(ecg_signal, fs, FPT);
+        startP = FPT(beat_index,1); 
+        endT = FPT(beat_index,12);
+
+        pqrst_segment = ecg_signal(startP:endT);
         [C, L] = wavedec(pqrst_segment, decomposition_level, wavelet_name);
         approx_coeffs = appcoef(C, L, wavelet_name, decomposition_level);
         approx_coeffs = approx_coeffs(:);
@@ -61,8 +70,6 @@ function [DWT_feature] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, 
             detail_coeffs{i} = detail_coeffs{i}(:);
             wavelet_features = [wavelet_features; mean(detail_coeffs{i}), std(detail_coeffs{i})];
         end
-       
-        % ---- PLOT ONLY IF gr == true ----
         figure;
         subplot(2, 1, 1);
         plot(pqrst_segment, 'b', 'LineWidth', 1);
@@ -96,19 +103,11 @@ function [DWT_feature] = ECG_DWT(ecg_signal, wavelet_name, decomposition_level, 
             plot(x_range, y_values{i}, 'LineWidth', 1.2);
             
             % Update X-offset to ensure continuity
-            x_offset = x_range(end) + 1;  
+            x_offset = x_range(end);  
         end
         
         % Add labels aligned below the X-axis
         y_min = min(cellfun(@min, y_values)) - 0.1 * abs(min(cellfun(@min, y_values)));
-        x_offset = 1;
-        for i = 1:length(y_values)
-            x_center = x_offset + length(y_values{i}) / 2;
-            text(x_center, y_min, labels{i}, 'Color', 'r', 'FontSize', 12, ...
-                 'FontWeight', 'bold', 'HorizontalAlignment', 'center');
-            x_offset = x_offset + length(y_values{i}) ; 
-        end
-        
         title('Decomposed Wavelet Coefficients of PQRST Complex', 'FontSize', 12, 'FontWeight', 'bold');
         xlabel('Samples', 'FontSize', 12);
         ylabel('Amplitude', 'FontSize', 12);

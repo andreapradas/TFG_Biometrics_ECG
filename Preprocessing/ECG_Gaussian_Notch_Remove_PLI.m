@@ -1,19 +1,20 @@
-% Gaussian_Notch_Filter applies a Gaussian notch filter to remove periodic noise.
+% ECG_Gaussian_Notch_Remove_PLI removes periodic interference using Gaussian notch filters.
 %
-% This function removes harmonic noise at multiples of a given fundamental 
-% frequency (f0) by applying Gaussian notch filters in the frequency domain.
-% It extends the input signal to reduce boundary effects, constructs a Gaussian 
-% filter centered at each harmonic, and applies the filter using the Fourier Transform.
+% This function attenuates harmonic noise at integer multiples of a fundamental 
+% frequency (f0) by applying Gaussian-shaped notch filters in the frequency domain.
+% The input signal is extended to reduce edge effects, and a composite filter is 
+% created by centering Gaussian notches at each harmonic of f0. Filtering is 
+% performed in the Fourier domain, and the result is transformed back to the time domain.
 %
 % Parameters:
-%   ecg_signal - The input ECG signal (matrix with dimensions: samples x channels).
-%   fs - The sampling frequency of the ECG signal in Hz.
-%   f0 - The fundamental frequency of the noise to be removed in Hz.
-%   width - The width of the Gaussian filter around each harmonic in Hz.
-%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+%   ecg_signal - Input ECG signal (matrix: samples x channels).
+%   fs         - Sampling frequency in Hz.
+%   f0         - Fundamental frequency to suppress (e.g., 60 Hz).
+%   width      - Bandwidth of each notch filter in Hz (controls Gaussian spread).
+%   gr         - Boolean flag to enable diagnostic plots (1 = plot, 0 = no plot).
 %
 % Returns:
-%   filtered_signal - The ECG signal after applying the Gaussian notch filter.
+%   filtered_signal - ECG signal after notch filtering.
 %
 function filtered_signal=ECG_Gaussian_Notch_Remove_PLI(ecg_signal, fs, f0, width, gr)
     utils = ECGutils;
@@ -33,16 +34,16 @@ function filtered_signal=ECG_Gaussian_Notch_Remove_PLI(ecg_signal, fs, f0, width
     L = size(signal_extended,1);
     f = (0:1:L-1)/L*fs; % Frequency vector
     
-    sigmaf = width; % Standard deviation of gaussian bell used to select frequency
+    sigmaf = width; % Standard deviation of gaussian window used to select frequency
     sigma = ceil(L*sigmaf/fs); % Sigma discrete
-    lg = 2*round(4*sigma)+1; % Size of gaussian bell
-    lb = (lg-1)/2; % Position of center of guassian bell
-    g = fspecial('gaussian',[1,lg],sigma)'; % Gaussian bell
-    g = 1/(max(g)-min(g))*(max(g)-g); % Scale gaussian bell to be in interval [0;1]
+    lg = 2*round(4*sigma)+1; % Size of gaussian window
+    lb = (lg-1)/2; % Position of center of guassian window
+    g = fspecial('gaussian',[1,lg],sigma)'; % Gaussian window
+    g = 1/(max(g)-min(g))*(max(g)-g); % Scale gaussian window to be in interval [0;1]
     
     H = ones(size(signal_extended,1),1); % Filter
     
-    % Implementation of periodical gaussian bells at k*f0Hz
+    % Implementation of periodical gaussian window at k*f0Hz
     for k = 1:K
             [~,b] = min(abs(f-k*f0)); % Discrete position at which f=k*f0Hz
             H(b-lb:b+lb) = g; % Gaussian bell placed around k*f0Hz

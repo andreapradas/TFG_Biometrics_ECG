@@ -7,63 +7,76 @@ if ~exist('Database','dir')
     error("Database folder not found.");
 end
 utils = ECGutils;
-
+global mit ptb;
 %% Select the DB to work with
-numPatients = 1;
-mit = 1;
-ptb = 0; 
-gr = 0;
+numSubjects = 1;
+mit = 0; % Database MIT-BIH is used
+ptb = 1; % Database PTB is used
+gr = 0; % Flag to generate figures or not
+min_duration = 90; 
 snr_imp = [];
+ecg_segmented_storage = [];
 if mit
-    cd("Database\physionet.org\files\mitdb\1.0.0\");
-    fileList = dir("*.hea");  
-    %numPatients = length(fileList);
-    patients_struct_train(numPatients) = struct('patientID', '', 'features', []);
+    mit_path = 'Database/physionet.org/files/mitdb/1.0.0/';
+    fileList = dir(fullfile(mit_path, '*.hea')); 
+    %numSubjects = length(fileList);
 end
 if ptb
-    cd("Database\physionet.org\files\ptb-diagnostic-ecg-database-1.0.0\");
-    patientFolders = dir; 
-    patientFolders = patientFolders([patientFolders.isdir]); 
-    patientFolders = patientFolders(~ismember({patientFolders.name}, {'.', '..'}));
-    % numPatients = length(patientFolders);
-    patients_struct_train(numPatients) = struct('patientID', '', 'features', []);
+    ptb_path  = 'Database/physionet.org/files/ptb-diagnostic-ecg-database-1.0.0/';
+    subjectFolders = dir(fullfile(ptb_path, 'patient*'));
+    %numSubjects = length(patientFolders);
 end
-%% Process patients
-for i = 1:numPatients
+%% Process patients 
+for i = 1:numSubjects
     if mit
-        patientID = erase(fileList(i).name, ".hea");
+        subjectID = erase(fileList(i).name, ".hea");
+        subjectPath = fullfile(mit_path, fileList(i).name);
+        recordingPath = char(strrep(fullfile('./', mit_path, subjectID),'\', '/')); % As wfdb is in /Utilities/mcode
         try
-            [raw_ecg, fs] = rdsamp(patientID, [1]); 
-            split_point = fs * 900;
-            raw_ecg = raw_ecg(1:split_point, :);% First 15 minutes
+            [raw_ecg, fs] = rdsamp(recordingPath, [1]); 
+            if length(raw_ecg) < min_duration * fs
+                warning("Recording %s is too short, it will be discarded.", subjectID);
+                continue;
+            end
+            raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
         catch ME
-            warning("Error reading the file %s.", patientID);
+            warning("Error reading the file %s.", subjectID);
         end
         try
-            [patient_ecg_features, snr_imp_i] = processECG(raw_ecg, fs, patientID, gr);
-            patients_struct_train(i).patientID = patientID;
-            patients_struct_train(i).features = patient_ecg_features;
+            [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+            ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
             snr_imp = [snr_imp; snr_imp_i];
         catch ME
-            warning("Error processing the ECG of %s: %s", patientID, ME.message);
+            warning("Error processing the ECG of %s: %s", subjectID, ME.message);
         end
     end
     if ptb
-        patientID = patientFolders(i).name;
-        cd(patientID);
-        patientID = erase(patientID, "patient"); % Mantain only the nº of the folderName
-        recordings = dir('*.hea');
-        numRecordings = length(recordings);
-        for j = 1:numRecordings
-            recordName = recordings(j).name(1:end-4); % Eliminate .hea extension
+        subjectID = erase(subjectFolders(i).name, "patient");
+        subjectPath = fullfile(ptb_path, subjectFolders(i).name);
+        recordings = dir(fullfile(subjectPath, '*.hea'));
+        for j = 1:length(recordings)
+            recordName = recordings(j).name(1:end-4); 
+            recordName = string(recordName);
+            subjectID = string(subjectID);
             try
-                 [raw_ecg, fs, ~] = rdsamp(recordName, [1]); 
-                 [patients_struct_train, snr_imp_i] = processECG(raw_ecg, fs, [patientID '_' recordName], patients_struct_train, i, gr); % To avoid overwriting
+                recordingPath = char(strrep(fullfile('./', subjectPath, recordName),'\', '/')); % As wfdb is in /Utilities/mcode
+                [raw_ecg, fs, ~] = rdsamp(recordingPath, [1]); 
+                if length(raw_ecg) < min_duration * fs
+                    warning("Recording %s is too short, it will be discarded.", subjectID);
+                    continue;
+                end
+                raw_ecg = raw_ecg(1: min_duration* fs); % To achieve a consistent dimension of arrays being concatenated
             catch ME
                 warning("Error reading %s: %s", recordName, ME.message);
             end
-        end
-        cd ..;
+            try 
+                [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+                ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
+                snr_imp = [snr_imp; snr_imp_i];
+            catch ME
+                warning("Error processing the ECG of %s: %s", recordName, ME.message);
+            end
+        end    
     end
 end
 
@@ -76,28 +89,12 @@ if gr
     fprintf('Mean SNR_HF_Imp : %.2f dB\n', avg_SNR(3));
 end
 
-%% Identification (kNN + SVM)
-patients_struct_test(numPatients) = struct('patientID', '', 'features', []);
-for i = 1:numPatients
-    patientID = erase(fileList(i).name, ".hea");
-    try
-        [raw_ecg_test, fs] = rdsamp(patientID, [1]); 
-        split_point = fs * 900;
-        raw_ecg_test = raw_ecg_test(split_point+1:split_point+split_point, :);% Last 15 minutes (till the middle+1 up to 15 minutes)
-    catch ME
-        warning("Error reading the file %s", patientID);
-    end
-    try
-        [patient_ecg_features, ~] = processECG(raw_ecg_test, fs, patientID, gr);
-        patients_struct_test(i).patientID = patientID;
-        patients_struct_test(i).features = patient_ecg_features;
-    catch ME
-        warning("Error processing the ECG of %s: %s", patientID, ME.message);
-    end
-end
-cd("..\..\..\..\..\");
-save("patients_features_train.mat", "patients_struct_train");
-save("patients_features_test.mat", "patients_struct_test");
-%% 
-predictedLabel = ECG_Identification(patients_struct_train, patients_struct_test, 1);
+%% Data storage
+save("ecg_segmented_storage.mat", "ecg_segmented_storage");
+
+%% Prepare data for Identification
+
+
+%% Identification (kNN + RF)
+%predictedLabel = ECG_Identification(ecg_segmented_storage, gr);
 

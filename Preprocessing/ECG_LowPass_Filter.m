@@ -1,29 +1,20 @@
-% ECG_Low_Filter - Applies a low-pass Butterworth filter to an ECG signal.
+% ECG_LowPass_Filter Applies a low-pass Butterworth filter to an ECG signal.
 %
-% Syntax:
-%   [filtered_signal] = ECG_Low_Filter(ecg_signal, samplerate, lowpass_frequency)
+% This function removes high-frequency noise from an ECG signal by applying a 
+% low-pass Butterworth filter of order 3. The filter is implemented using zero-phase 
+% filtering to avoid phase distortion. The signal is symmetrically extended before 
+% filtering to reduce border effects and trimmed afterward. The function also applies 
+% isoline correction after filtering.
 %
-% Inputs:
-%   ecg_signal - The input ECG signal (1D vector).
-%   fs - The sampling rate of the ECG signal (Hz).
-%   lowpass_frequency - The cutoff frequency for the low-pass filter (Hz).
-%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+% Parameters:
+%   ecg_signal          - The input ECG signal (1D vector).
+%   fs                  - Sampling frequency of the ECG signal (Hz).
+%   lowpass_frequency   - Cutoff frequency of the low-pass filter (Hz).
+%   gr                  - Boolean flag to generate plots (1 = plot, 0 = no plot).
 %
-% Outputs:
-%   filtered_signal - The filtered ECG signal after applying the low-pass filter.
+% Returns:
+%   filtered_signal     - The ECG signal after low-pass filtering and isoline correction.
 %
-% Description:
-%   This function applies a low-pass Butterworth filter of order 3 to the
-%   input ECG signal to remove high-frequency noise. The signal is extended 
-%   to avoid border artifacts during filtering. The extension is removed 
-%   after filtering. The filter is applied in a zero-phase forward and 
-%   reverse filtering using 'filtfilt' to avoid phase distortion.
-%
-% Notes:
-%   - The function assumes the input signal is one-dimensional (a single channel).
-%   - The signal is extended by 10 seconds at both ends before filtering.
-%   - The function checks if the low-pass frequency is above the Nyquist frequency
-%     and adjusts it if necessary.
     
 function [filtered_signal]=ECG_LowPass_Filter(ecg_signal,fs,lowpass_frequency, gr)
     

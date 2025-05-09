@@ -1,20 +1,18 @@
-% ECG_Complete_Filtering applies a complete filtering pipeline to an ECG signal.
+% ECG_Complete_Filtering applies a full denoising pipeline to an ECG signal.
 %
-% This function removes powerline interference, baseline wander, and other 
-% artifacts from the raw ECG signal. The filtering process consists of:
-%   1. A notch filter at 60 Hz to remove powerline interference.
-%   2. A high-pass FIR filter to remove baseline wander.
-%   3. A band-pass filter to retain the relevant ECG frequency components.
-%   4. Isoline correction to adjust the signal offset.
+% This function removes typical ECG signal artifacts including:
+%   1. Powerline interference (60 Hz) using a notch filter.
+%   2. Baseline wander via a high-pass FIR filter.
+%   3. High-frequency noise using a band-pass filter.
+%   4. DC drift and offset through isoline correction.
 %
 % Parameters:
-%   raw_ecg - The raw input ECG signal (1D array).
-%   fs - The sampling frequency of the ECG signal in Hz.
-%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+%   raw_ecg - 1D array representing the input ECG signal.
+%   fs      - Sampling frequency in Hz.
+%   gr      - Boolean flag to generate diagnostic plots (1 = plot, 0 = no plot).
 %
 % Returns:
-%   ecg_filtered - The fully processed ECG signal after filtering.
-%
+%   ecg_filtered - The filtered ECG signal, ready for further analysis.
 
 function [ecg_filtered] = ECG_Complete_Filtering(raw_ecg, fs, gr)
     utils = ECGutils;

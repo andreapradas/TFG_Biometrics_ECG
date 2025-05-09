@@ -16,12 +16,13 @@
 %       .AC_DCT_coef - Feature vector from autocorrelation and DCT method.
 %       .DWT_features - Feature vector from the Discrete Wavelet Transform.
 %
-function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
+function [subject_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
     utils = ECGutils;
+    global mit ptb;
     %% RR interval --> Pan-tompkins
-    [~, qrs_i_raw, ~] = ECG_Pan_Tompkins(ecg_filtered, fs, gr);
+    [~, qrs_i_raw, ~] = ECG_RR_interval(ecg_filtered, fs, gr);
     t = (0:length(ecg_filtered)-1) / fs;
-    RR_intervals = diff(t(qrs_i_raw));
+    RR_interval = diff(t(qrs_i_raw));
    
     if gr
         utils.plotTimeDomain(t, ecg_filtered, 'R Peak Detection', 'b');
@@ -36,7 +37,7 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
         plot(t(qrs_i_raw), ecg_filtered(qrs_i_raw), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
                 
         % Loop through consecutive R-peaks to draw connecting lines and annotate RR intervals
-        for i = 1:length(RR_intervals)
+        for i = 1:length(RR_interval)
             % Coordinates of current and next R-peak
             x1 = t(qrs_i_raw(i));
             y1 = ecg_filtered(qrs_i_raw(i));
@@ -51,7 +52,7 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
             mid_y = (y1 + y2) / 2;
             
             % Display the RR interval at the midpoint (formatted to 3 decimals)
-            text(mid_x, mid_y, sprintf('RR: %.3f s', RR_intervals(i)), ...
+            text(mid_x, mid_y, sprintf('RR: %.3f s', RR_interval(i)), ...
                  'Color', 'k', 'FontSize', 10, 'FontWeight', 'bold', ...
                  'BackgroundColor', 'w', 'EdgeColor', 'k', 'Margin', 2);
         end
@@ -64,22 +65,28 @@ function [patient_ecg_features] = ECG_Feature_Extraction(ecg_filtered, fs, gr)
     end
     
     %% Autocorrelation + Dimension Reduction (AC/DCT)
-    L = 60; % Number of AC coeficientes ideal for MIT-BIH dataset
-    K = 38; % Upper fc bandpass filter
+    if mit            
+        L = 60; % Number of AC coeficientes ideal for MIT-BIH dataset
+        K = 38; % Upper fc bandpass filter
+    end
+    if ptb
+        L = 240; % Number of AC coeficientes ideal for PTB dataset
+        K = 20; % Yielded the best results
+    end
     [AC_DCT_coef, ~, ~] = ECG_AC_DCT(ecg_filtered, L, K, fs, gr); 
     
     %% Discrete Wavelet Transform (DWT)
     wavelet_name = 'db3';
     decomposition_level = 5; 
-    [DWT_feature] = ECG_DWT(ecg_filtered, wavelet_name, decomposition_level, gr);
+    [DWT_feature] = ECG_DWT(ecg_filtered, wavelet_name, decomposition_level, fs, gr);
   
     %% Add patient's features to its structure
-    patient_ecg_features = struct();
+    subject_ecg_features = struct();
 
-    patient_ecg_features.RR_intervals = RR_intervals; 
+    subject_ecg_features.RR_intervals = RR_interval; 
 
-    patient_ecg_features.AC_DCT_coef = AC_DCT_coef;
+    subject_ecg_features.AC_DCT_coef = AC_DCT_coef;
 
-    patient_ecg_features.DWT_feature = DWT_feature;
+    subject_ecg_features.DWT_features = DWT_feature;
 
 end

@@ -1,30 +1,20 @@
-% ECG_High_Filter - Applies a high-pass Butterworth filter to an ECG signal.
+% ECG_HighPass_Filter Applies a high-pass Butterworth filter to an ECG signal.
 %
-% Syntax: 
-%   [filteredsignal] = ECG_High_Filter(signal, samplerate, highpass_frequency)
+% This function removes low-frequency noise (e.g., baseline wander) from an ECG signal
+% by applying a high-pass Butterworth filter of order 3. The filter is implemented using 
+% zero-phase filtering to avoid phase distortion. The signal is symmetrically extended 
+% to reduce border artifacts and trimmed after filtering. Isoline correction is applied 
+% at the end to remove any DC offset.
 %
-% Inputs:
-%   ecg_signal - The input ECG signal (1D vector).
-%   fs - The sampling rate of the ECG signal (Hz).
-%   highpass_frequency - The cutoff frequency for the high-pass filter (Hz).
-%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+% Parameters:
+%   ecg_signal          - The input ECG signal (1D vector).
+%   fs                  - Sampling frequency of the ECG signal (Hz).
+%   highpass_frequency  - Cutoff frequency of the high-pass filter (Hz).
+%   gr                  - Boolean flag to generate plots (1 = plot, 0 = no plot).
 %
-% Outputs:
-%   filtered_signal - The filtered ECG signal after applying the high-pass filter.
+% Returns:
+%   filtered_signal     - The ECG signal after high-pass filtering and isoline correction.
 %
-% Description:
-%   This function applies a high-pass Butterworth filter of order 3 to the
-%   input ECG signal to remove low-frequency noise (such as baseline wander).
-%   The signal is extended to avoid border artifacts during filtering.
-%   The extension is removed after filtering. The filter is applied in a
-%   zero-phase forward and reverse filtering using 'filtfilt' to avoid phase
-%   distortion.
-%
-% Notes:
-%   - The function assumes the input signal is one-dimensional (a single channel).
-%   - The signal is extended by 10 seconds at both ends before filtering.
-%   - The function checks if the high-pass frequency is above the Nyquist frequency
-%     and adjusts it if necessary.
 
 function [filtered_signal]=ECG_HighPass_Filter(ecg_signal,fs,highpass_frequency, gr)
     % Ensure the signal is a column vector

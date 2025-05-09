@@ -22,46 +22,16 @@
 function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
     %% Autocorrelation Rxx[k]
     N = length(ecg_signal);
-    rxx = xcorr(ecg_signal, 'biased'); 
+    rxx = xcorr(ecg_signal, 'biased');
     lags = -N+1:N-1; % Dimension of the AC is 2*N-1 (computationally high)
 
     % Normalize the autocorrelation
     rxx_norm = rxx / max(rxx); % Normalize by maximum amplitude usually Rxx[0]
 
     %% Windowing almost 5 seconds ECG signal
-    N = 4.8 * fs; 
+    N = 4.8 * fs;
     num_windows = floor(length(ecg_signal) / N);
     DCT_coef_matrix = zeros(num_windows, K); 
-    if gr
-        figure;
-        subplot(4,1,1);
-        hold on;
-        title('ECG Signal (almost 5 seconds)');
-        xlabel('Time (ms)');
-        ylabel('Amplitude');
-        grid on;
-    
-        subplot(4,1,2);
-        hold on;
-        title('AC of ECG (Normalized)');
-        xlabel('Time (ms)');
-        ylabel('Amplitude');
-        grid on;
-    
-        subplot(4,1,3);
-        hold on;
-        title('60 AC Coefficients');
-        xlabel('Time (ms)');
-        ylabel('Normalized Power');
-        grid on;
-    
-        subplot(4,1,4);
-        hold on;
-        title('Zoomed DCT (38 Coefficients)');
-        xlabel('DCT Coefficients');
-        ylabel('Magnitude');
-        grid on;
-    end
     for i = 1:num_windows
         start_idx = (i - 1) * N + 1;
         end_idx = start_idx + N - 1;
@@ -95,4 +65,35 @@ function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
         end
     end
     AC_DCT_coef = reshape(DCT_coef_matrix.', 1, []);
+
+    if gr
+        figure;
+        subplot(4,1,1);
+        hold on;
+        title('ECG Signal (almost 5 seconds)');
+        xlabel('Time (ms)');
+        ylabel('Amplitude');
+        grid on;
+    
+        subplot(4,1,2);
+        hold on;
+        title('AC of ECG (Normalized)');
+        xlabel('Time (ms)');
+        ylabel('Amplitude');
+        grid on;
+    
+        subplot(4,1,3);
+        hold on;
+        title('60 AC Coefficients');
+        xlabel('Time (ms)');
+        ylabel('Normalized Power');
+        grid on;
+    
+        subplot(4,1,4);
+        hold on;
+        title('Zoomed DCT (38 Coefficients)');
+        xlabel('DCT Coefficients');
+        ylabel('Magnitude');
+        grid on;
+    end
 end

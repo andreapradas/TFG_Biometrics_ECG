@@ -9,6 +9,18 @@ function ECGutils = ECGutils
 end
 %% Function to plot ECG in the time domain
 function plotTimeDomain(t, signal, titleStr, color)
+    % Function to plot ECG in the time domain.
+    % This function generates a plot of the ECG signal in the time domain.
+    %
+    % Inputs:
+    %   t          - Time vector corresponding to the ECG signal (in seconds)
+    %   signal     - The ECG signal (1D array)
+    %   titleStr   - The title of the plot
+    %   color      - The color to plot the ECG signal
+    %
+    % Output:
+    %   A figure showing the ECG signal in the time domain.
+
     figure;
     plot(t, signal, color);
     xlim([0 2.5]);
@@ -29,8 +41,6 @@ function plotComparison(t, signal1, signal2, title1, title2)
     %   title1   - Title for the first signal
     %   title2   - Title for the second signal
     %
-    % Output:
-    %   A figure showing the comparison of the two ECG signals.
 
     figure; 
     plot(t, signal1, 'b', 'DisplayName', title1);
@@ -86,6 +96,19 @@ end
 
 %% Function to compute SNR
 function snrValue = computeSNR(signal, fs, signal_band, noise_band)
+    % Function to compute Signal-to-Noise Ratio (SNR) of an ECG signal.
+    % This function computes the SNR by calculating the power in the signal band
+    % and dividing it by the power in the noise band.
+    %
+    % Inputs:
+    %   signal      - ECG signal (1D array)
+    %   fs          - Sampling frequency (Hz)
+    %   signal_band - Frequency band for the signal 
+    %   noise_band  - Frequency band for the noise 
+    %
+    % Outputs:
+    %   snrValue    - Signal-to-Noise Ratio (SNR) in dB
+
     signal_power = bandpower(signal, fs, signal_band);
     noise_power = bandpower(signal, fs, noise_band);
     snrValue = 10 * log10(signal_power / (noise_power + eps)); % To avoid divisions by 0
@@ -93,6 +116,21 @@ end
 
 %% Fucntion to compute Filtering metrics
 function metrics_filtering = evaluateFiltering(raw_ecg, filtered_ecg, fs) 
+    % Function to evaluate the performance of filtering.
+    % This function computes the improvement in Signal-to-Noise Ratio (SNR) 
+    % before and after filtering for different frequency bands.
+    %
+    % Inputs:
+    %   raw_ecg    - The raw ECG signal (1D array)
+    %   filtered_ecg - The filtered ECG signal (1D array)
+    %   fs          - Sampling frequency (Hz)
+    %
+    % Outputs:
+    %   metrics_filtering - A vector containing the improvement in SNR for each band:
+    %                       - SNR improvement for PLI band (59-61 Hz)
+    %                       - SNR improvement for BLW band (0.05-0.5 Hz)
+    %                       - SNR improvement for High Frequency band (40-100 Hz)
+
     band_useful = [0.5 40];
     band_PLI = [59 61];
     band_BLW = [0.05 0.5];
