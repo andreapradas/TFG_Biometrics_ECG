@@ -418,7 +418,6 @@ FPT(end,1)=FPT(end,7)-medpron;
 FPT(end,2)=FPT(end,7)-medpr;
 FPT(end,3)=FPT(end,7)-medproff;
 
-disp('Done');
 end
 
 function [ p ] = search_p( filteredsignal, wt_max, samplerate, take_wt_max )

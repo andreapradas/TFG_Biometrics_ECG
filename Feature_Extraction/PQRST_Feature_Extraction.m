@@ -25,19 +25,27 @@ function [pqrst_features_struct] = PQRST_Feature_Extraction(ecg_filtered, subjec
     [~, qrs_i_raw, ~] = ECG_RR_interval(ecg_filtered, fs, gr);
     t = (0:length(ecg_filtered)-1) / fs;
     RR_intervals = diff(t(qrs_i_raw));
+
+    %% ECG segmentation
     FPT = []; % Table with Fiducial points
-    % numBeats = length(qrs_i_raw)-1; % As the last beat NOT have RR_interval feature
-    numBeats = 119; % If not structures cannot be concatenated afterwards
-    ecg_segments = cell(numBeats, 1);
-    pqrst_features_struct = struct();
+    %numBeats = length(qrs_i_raw)-1; % As the last beat NOT have RR_interval feature
 
     FPT = QRS_Detection(ecg_filtered, fs); 
     FPT = P_Detection(ecg_filtered, fs, FPT); 
     FPT = T_Detection(ecg_filtered, fs, FPT);
+    % Prove that NO indexes exceed the signal legth
+
+
+    numBeats = min(length(FPT),length(RR_intervals)); % As there are differently calculated, could be unmatched nº of beats detected
+    ecg_segments = cell(numBeats, 1);
+    pqrst_features_struct = struct();
 
     for i = 1:numBeats
         startP = FPT(i,1); 
         endT = FPT(i,12);
+        if startP == 0
+            startP =1; % To handle properly array indices problems
+        end
         ecg_segments{i} = ecg_filtered(startP:endT); % Window selected --> PQRST complex
 
         %% Autocorrelation + Dimension Reduction (AC/DCT)

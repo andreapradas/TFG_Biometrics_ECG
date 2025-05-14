@@ -199,9 +199,7 @@ if sum(isnan(pks(number,:))) == length(signal(number,:))
     for i = 1: length(signal(number,:))
         PMorph(number,i) = 0;
     end
-end
-disp('Checking for biphasic P-waves done, continuing with checking for M-shaped P-waves')        
-        
+end        
    
 % -------------------------------------------------------------------------
 % checking for M-shaped P-wave 
@@ -363,6 +361,4 @@ for lead = 1 : length(FPT(:,1))
     end
    
 end
-
-disp('Done');
 

@@ -30,23 +30,71 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
     ser_back = 0; 
     ax = zeros(1,6);
     
+    %% Noise cancelation(Filtering)( 5-15 Hz)
+    if fs == 200
+        % Remove the mean of Signal
+        ecg_signal = ecg_signal - mean(ecg_signal);
+        %% Low Pass Filter  H(z) = ((1 - z^(-6))^2)/(1 - z^(-1))^2
+        %It has come to my attention the original filter doesnt achieve 12 Hz
+        %    b = [1 0 0 0 0 0 -2 0 0 0 0 0 1];
+        %    a = [1 -2 1];
+        %    ecg_l = filter(b,a,ecg); 
+        %    delay = 6;
+        Wn = 12*2/fs;
+        N = 3; % order of 3 less processing
+        [a,b] = butter(N,Wn,'low');  % bandpass filtering
+        ecg_l = filtfilt(a,b,ecg_signal); 
+        ecg_l = ecg_l/ max(abs(ecg_l));
+        if gr
+            figure;
+            ax(1) = subplot(321);plot(ecg_signal);axis tight;title('Raw signal');
+            ax(2)=subplot(322);plot(ecg_l);axis tight;title('Low pass filtered');
+        end
+        %% High Pass filter H(z) = (-1+32z^(-16)+z^(-32))/(1+z^(-1))
+        % It has come to my attention the original filter doesn achieve 5 Hz
+        %    b = zeros(1,33);
+        %    b(1) = -1; b(17) = 32; b(33) = 1;
+        %    a = [1 1];
+        %    ecg_h = filter(b,a,ecg_l);    % Without Delay
+        %    delay = delay + 16;
+        Wn = 5*2/fs;
+        N = 3; % order of 3 less processing
+        [a,b] = butter(N,Wn,'high');  % bandpass filtering
+        ecg_h = filtfilt(a,b,ecg_l); 
+        ecg_h = ecg_h/ max(abs(ecg_h));
+        if gr
+            ax(3)=subplot(323);plot(ecg_h);axis tight;title('High Pass Filtered');
+        end
+        else
+        %% Bandpass filter for Noise cancelation of other sampling frequencies(Filtering)
+        f1=5;   % cuttoff low frequency to get rid of baseline wander
+        f2=15;  % cuttoff frequency to discard high frequency noise
+        Wn=[f1 f2]*2/fs;  % cutt off based on fs
+        N = 3;   % order of 3 less processing
+        [a,b] = butter(N,Wn);  % bandpass filtering
+        ecg_h = filtfilt(a,b,ecg_signal);
+        ecg_h = ecg_h/ max( abs(ecg_h));
+        if gr
+            ax(1) = subplot(3,2,[1 2]);plot(ecg_signal);axis tight;title('Raw Signal');
+            ax(3)=subplot(323);plot(ecg_h);axis tight;title('Band Pass Filtered');
+        end
+    end
     %% Derivative Filter
     % H(z) = (1/8T)(-z^(-2) - 2z^(-1) + 2z + z^(2))
     if fs ~= 200
-     int_c = (5-1)/(fs*1/40);
-     b = interp1(1:5,[1 2 0 -2 -1].*(1/8)*fs,1:int_c:5);
+        int_c = (5-1)/(fs*1/40);
+        b = interp1(1:5,[1 2 0 -2 -1].*(1/8)*fs,1:int_c:5);
     else
-     b = [1 2 0 -2 -1].*(1/8)*fs;   
+        b = [1 2 0 -2 -1].*(1/8)*fs;   
     end
     
-     ecg_d = filtfilt(b,1,ecg_signal);
-     ecg_d = ecg_d/max(ecg_d);
-    
-     if gr
-      ax(4) = subplot(324);plot(ecg_d);
-      axis tight;
-      title('Filtered with the derivative filter');
-     end
+    ecg_d = filtfilt(b,1,ecg_signal);
+    ecg_d = ecg_d/max(ecg_d);
+    if gr
+        ax(4) = subplot(324);plot(ecg_d);
+        axis tight;
+        title('Filtered with the derivative filter');
+    end
     %% Squaring nonlinearly enhance the dominant peaks
      ecg_s = ecg_d.^2;
      if gr

@@ -9,9 +9,9 @@ end
 utils = ECGutils;
 global mit ptb;
 %% Select the DB to work with
-numSubjects = 1;
-mit = 0; % Database MIT-BIH is used
-ptb = 1; % Database PTB is used
+numSubjects = 10;
+mit = 1; % Database MIT-BIH is used
+ptb = 0; % Database PTB is used
 gr = 0; % Flag to generate figures or not
 min_duration = 90; 
 snr_imp = [];
@@ -30,6 +30,7 @@ end
 for i = 1:numSubjects
     if mit
         subjectID = erase(fileList(i).name, ".hea");
+        %subjectID = string(109);
         subjectPath = fullfile(mit_path, fileList(i).name);
         recordingPath = char(strrep(fullfile('./', mit_path, subjectID),'\', '/')); % As wfdb is in /Utilities/mcode
         try
@@ -44,6 +45,7 @@ for i = 1:numSubjects
         end
         try
             [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+            pqrst_features_struct = pqrst_features_struct(:);
             ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
             snr_imp = [snr_imp; snr_imp_i];
         catch ME
@@ -71,6 +73,7 @@ for i = 1:numSubjects
             end
             try 
                 [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+                pqrst_features_struct = pqrst_features_struct(:);
                 ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
                 snr_imp = [snr_imp; snr_imp_i];
             catch ME

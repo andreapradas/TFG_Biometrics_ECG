@@ -476,6 +476,5 @@ remove=find(diff(FPT(:,6))/samplerate<0.25);
 FPT(remove+1,:)=[];
 
 if mute==0
-    disp('Done')
 end
 

@@ -63,7 +63,6 @@ function [FPT]=Check_R_Peaks_Multi(signal,samplerate,FPT,varargin)
 %Outputs:
 %FPT is the Fidutial Point Table corresponding to the ECG signal.
 
-disp('Checking R Peaks...');
 
 %% Denoise ECG
 %Highpass 5Hz to reduce baseline wander, aminorate the T and P waves and
@@ -263,4 +262,3 @@ FPT(:,6)=RPOS_vector;
 FPT(:,7)=SPOS_vector;
 FPT(:,8)=QRSoffPOS_vector;
 
-disp('Done');

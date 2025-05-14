@@ -46,8 +46,6 @@
 
 function FPT=Check_T_Wave(signal,samplerate,FPT,varargin)
 
-display('Checking T Waves...')
-
 %check if signal is of type double
 if ~isa(signal,'double')
     signal=double(signal);
@@ -270,5 +268,3 @@ else %R peak and T onset are given
     k=0.6;
     FPT(:,9)=round(k*FPT(:,10)+(1-k)*FPT(:,6)); %L point is located around the middle between QRS offset and T onset
 end
-
-display('Done');

@@ -51,6 +51,7 @@ function [pqrst_features_struct, snr_imp] = process_ECG(raw_ecg, subjectID, fs, 
     % Denoising performance metrics
     snr_imp = utils.evaluateFiltering(raw_ecg_norm, ecg_filtered, fs);
     if gr
+        t = (0:length(ecg_filtered)-1) / fs;    
         utils.plotTimeDomain(t, ecg_filtered, "ECG Common Fiducial Features", 'b');
         xlim([0 1.5]);
         varNames = {'SNR_PLI_Imp', 'SNR_BLW_Imp', 'SNR_HF_Imp'};
@@ -68,5 +69,6 @@ function [pqrst_features_struct, snr_imp] = process_ECG(raw_ecg, subjectID, fs, 
 
     %% Feature Extraction (RR interval + AC/DCT + Wavelet Transform)
     pqrst_features_struct = PQRST_Feature_Extraction(ecg_filtered, subjectID, fs, gr);
+
     fprintf("Individual %s processed successfully.\n", subjectID);
 end

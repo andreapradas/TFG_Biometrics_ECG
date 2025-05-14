@@ -41,7 +41,6 @@
 
 function [FPT_Synced,FPT_Cell_Synced]=Sync_Beats(FPT_Cell,samplerate)
 
-disp('Syncing beats...');
 
 %Number of channels
 N_Channels=length(FPT_Cell);
@@ -200,4 +199,3 @@ if size(FPT_Synced,1)<3
     end
 end
 
-disp('Done');
