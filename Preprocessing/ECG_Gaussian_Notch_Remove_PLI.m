@@ -9,7 +9,7 @@
 % Parameters:
 %   ecg_signal - Input ECG signal (matrix: samples x channels).
 %   fs         - Sampling frequency in Hz.
-%   f0         - Fundamental frequency to suppress (e.g., 60 Hz).
+%   f0         - Fundamental frequency to suppress (e.g., 60 Hz or 50 Hz).
 %   width      - Bandwidth of each notch filter in Hz (controls Gaussian spread).
 %   gr         - Boolean flag to enable diagnostic plots (1 = plot, 0 = no plot).
 %

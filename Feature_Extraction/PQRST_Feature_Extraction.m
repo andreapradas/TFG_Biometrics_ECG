@@ -26,7 +26,7 @@ function [pqrst_features_struct] = PQRST_Feature_Extraction(ecg_filtered, subjec
     t = (0:length(ecg_filtered)-1) / fs;
     RR_intervals = diff(t(qrs_i_raw));
 
-    %% ECG segmentation
+    %% ECG segmentation into PQRST segments
     FPT = []; % Table with Fiducial points
     %numBeats = length(qrs_i_raw)-1; % As the last beat NOT have RR_interval feature
 
@@ -83,42 +83,43 @@ function [pqrst_features_struct] = PQRST_Feature_Extraction(ecg_filtered, subjec
         pqrst_features_struct(i).DWT_features = DWT_feature;
     end
 
-    if gr
-        utils.plotTimeDomain(t, ecg_filtered, 'R Peak Detection', 'b');
-        xlim([0 2]);
-        hold on;
-        plot(t(qrs_i_raw), ecg_filtered(qrs_i_raw), 'ro', 'MarkerFaceColor', 'r');
-        grid on;
-        figure;
-        plot(t, ecg_filtered, 'b', 'LineWidth', 1.2); 
-        hold on;
-        plot(t(qrs_i_raw), ecg_filtered(qrs_i_raw), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+    %%
+        if gr
+            f = figure; 
+            f.Position = [100, 200, 650,210]; % To capture same length for visual consistency among figures
+            utils.plotTimeDomain(t, ecg_filtered, 'R Peak Detection', 'b');
+            hold on;
+            plot(t(qrs_i_raw), ecg_filtered(qrs_i_raw), 'ro', 'MarkerFaceColor', 'r');
+            grid on;
+            figure;
+            plot(t, ecg_filtered, 'b'); 
+            hold on;
+            plot(t(qrs_i_raw), ecg_filtered(qrs_i_raw), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r');
+                    
+            % Loop through consecutive R-peaks to draw connecting lines and annotate RR intervals
+            for i = 1:length(RR_intervals)
+                % Coordinates of current and next R-peak
+                x1 = t(qrs_i_raw(i));
+                y1 = ecg_filtered(qrs_i_raw(i));
+                x2 = t(qrs_i_raw(i+1));
+                y2 = ecg_filtered(qrs_i_raw(i+1));
                 
-        % Loop through consecutive R-peaks to draw connecting lines and annotate RR intervals
-        for i = 1:length(RR_intervals)
-            % Coordinates of current and next R-peak
-            x1 = t(qrs_i_raw(i));
-            y1 = ecg_filtered(qrs_i_raw(i));
-            x2 = t(qrs_i_raw(i+1));
-            y2 = ecg_filtered(qrs_i_raw(i+1));
-            
-            % Draw a line connecting the two R-peaks
-            plot([x1, x2], [y1, y2], 'k-', 'LineWidth', 1.5);
-            
-            % Compute the midpoint for annotation
-            mid_x = (x1 + x2) / 2;
-            mid_y = (y1 + y2) / 2;
-            
-            % Display the RR interval at the midpoint (formatted to 3 decimals)
-            text(mid_x, mid_y, sprintf('RR: %.3f s', RR_intervals(i)), ...
-                 'Color', 'k', 'FontSize', 10, 'FontWeight', 'bold', ...
-                 'BackgroundColor', 'w', 'EdgeColor', 'k', 'Margin', 2);
-        end
-        title('ECG Signal with R-Peak Detection and RR Intervals','FontSize',12,'FontWeight','bold');
-        xlabel('Time (s)','FontSize',12);
-        ylabel('Amplitude (mV)','FontSize',12);
-        xlim([0 2]);
-        grid on;
-        hold off;
+                % Draw a line connecting the two R-peaks
+                plot([x1, x2], [y1, y2], 'k-', 'LineWidth', 1.5);
+                
+                % Compute the midpoint for annotation
+                mid_x = (x1 + x2) / 2;
+                mid_y = (y1 + y2) / 2;
+                
+                % Display the RR interval at the midpoint (formatted to 3 decimals)
+                text(mid_x, mid_y, sprintf('RR: %.3f s', RR_intervals(i)), ...
+                     'Color', 'k', 'FontSize', 10, 'FontWeight', 'bold', ...
+                     'BackgroundColor', 'w', 'EdgeColor', 'k', 'Margin', 2);
+            end
+            title('ECG Signal with R-Peak Detection and RR Intervals', 'FontWeight','bold');
+            xlabel('Time (s)');
+            ylabel('Amplitude (mV)');
+            grid on;
+            hold off;
     end
 end

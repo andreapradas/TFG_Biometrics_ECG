@@ -21,7 +21,8 @@ function plotTimeDomain(t, signal, titleStr, color)
     % Output:
     %   A figure showing the ECG signal in the time domain.
 
-    figure;
+    f = figure; 
+    f.Position = [100, 200, 650,210];
     plot(t, signal, color);
     xlim([0 2.5]);
     xlabel('Time (s)');
@@ -42,7 +43,8 @@ function plotComparison(t, signal1, signal2, title1, title2)
     %   title2   - Title for the second signal
     %
 
-    figure; 
+    f = figure; 
+    f.Position = [100, 200, 650,210];
     plot(t, signal1, 'b', 'DisplayName', title1);
     xlim([0 2.5]);
     hold on;

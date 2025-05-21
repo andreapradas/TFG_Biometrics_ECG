@@ -17,10 +17,10 @@
 %   AC_DCT_coef - Row vector containing the first K DCT coefficients of the AC.
 %
 
-function [AC_DCT_coef] = PQRST_AC_DCT(ecg_segments, L, K, fs, gr)
+function [AC_DCT_coef] = PQRST_AC_DCT(ecg_segment, L, K, fs, gr)
     %% Autocorrelation Rxx[k]
-    N = length(ecg_segments);
-    rxx = xcorr(ecg_segments, 'biased');
+    N = length(ecg_segment);
+    rxx = xcorr(ecg_segment, 'biased');
     % lags = -N+1:N-1; % Dimension of the AC is 2*N-1 (computationally high)
 
     % Normalize the autocorrelation
@@ -33,24 +33,24 @@ function [AC_DCT_coef] = PQRST_AC_DCT(ecg_segments, L, K, fs, gr)
     AC_DCT_coef = DCT_coef(1:K); % Only first K DCT coeff. 
 
     if gr
-        t_ecg = (0:length(ecg_segments)-1) / fs * 1000; 
+        t_ecg = (0:length(ecg_segment)-1) / fs * 1000; 
         figure;
         subplot(3,1,1);
-        plot(t_ecg, ecg_segments, 'b');
+        plot(t_ecg, ecg_segment, 'b');
         title('PQRST complex');
         xlabel('Time (ms)');
         ylabel('Amplitude');
         grid on;
 
         subplot(3,1,2);
-        plot((0:L-1) * (1000/fs), rxx_firstL, 'r');
+        plot((0:L-1) * (1000/fs), rxx_firstL, 'b');
         title(['First ' num2str(L) ' AC Coefficients']);
         xlabel('Lag (ms)');
         ylabel('Amplitude');
         grid on;
 
         subplot(3,1,3);
-        plot(0:K-1, AC_DCT_coef, 'k');
+        plot(0:K-1, AC_DCT_coef, 'b');
         title(['First ' num2str(K) ' DCT Coefficients']);
         xlabel('DCT Index');
         ylabel('Magnitude');

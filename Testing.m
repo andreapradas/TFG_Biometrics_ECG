@@ -9,37 +9,36 @@ end
 utils = ECGutils;
 global mit ptb;
 %% Select the DB to work with
-numSubjects = 10;
+%numSubjects = 2;
 mit = 1; % Database MIT-BIH is used
 ptb = 0; % Database PTB is used
 gr = 0; % Flag to generate figures or not
-min_duration = 90; 
+% min_duration = 90; 
 snr_imp = [];
 ecg_segmented_storage = [];
 if mit
     mit_path = 'Database/physionet.org/files/mitdb/1.0.0/';
     fileList = dir(fullfile(mit_path, '*.hea')); 
-    %numSubjects = length(fileList);
+    numSubjects = length(fileList);
 end
 if ptb
     ptb_path  = 'Database/physionet.org/files/ptb-diagnostic-ecg-database-1.0.0/';
     subjectFolders = dir(fullfile(ptb_path, 'patient*'));
-    %numSubjects = length(patientFolders);
+    numSubjects = length(subjectFolders);
 end
 %% Process patients 
 for i = 1:numSubjects
     if mit
         subjectID = erase(fileList(i).name, ".hea");
-        %subjectID = string(109);
         subjectPath = fullfile(mit_path, fileList(i).name);
         recordingPath = char(strrep(fullfile('./', mit_path, subjectID),'\', '/')); % As wfdb is in /Utilities/mcode
         try
             [raw_ecg, fs] = rdsamp(recordingPath, [1]); 
-            if length(raw_ecg) < min_duration * fs
-                warning("Recording %s is too short, it will be discarded.", subjectID);
-                continue;
-            end
-            raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
+%             if length(raw_ecg) < min_duration * fs
+%                 warning("Recording %s is too short, it will be discarded.", subjectID);
+%                 continue;
+%             end
+            %raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
         catch ME
             warning("Error reading the file %s.", subjectID);
         end
@@ -93,11 +92,8 @@ if gr
 end
 
 %% Data storage
-save("ecg_segmented_storage.mat", "ecg_segmented_storage");
-
-%% Prepare data for Identification
-
+save("ecg_segmented_storage_MIT_5ss.mat", "ecg_segmented_storage");
 
 %% Identification (kNN + RF)
-%predictedLabel = ECG_Identification(ecg_segmented_storage, gr);
+performance_struct = ECG_Identification(ecg_segmented_storage, gr);
 
