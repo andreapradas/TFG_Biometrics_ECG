@@ -6,8 +6,8 @@ This repository contains the code and methodologies for biometric identification
 ## ⚙️ Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/Biometrics-by-ECG.git
-   cd Biometrics-by-ECG
+   git clone https://github.com/andreapradas/TFG_Biometrics_ECG.git
+   cd TFG_Biometrics_ECG
 ## 🚀 Usage
 Run main.m to execute the entire pipeline:
 matlab
