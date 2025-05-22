@@ -28,4 +28,5 @@ function [featuresMatrix, labels] = prepare_matrix_kNN(ecg_segmented_storage)
         featuresMatrix(p, :) = [rr, dct, dwt];
         labels(p) = string(ecg_segmented_storage(p).subjectID);
     end
+    labels = categorical(labels);
 end

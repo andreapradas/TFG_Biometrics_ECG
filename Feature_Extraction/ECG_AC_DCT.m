@@ -72,7 +72,7 @@ function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
         rxx_win_norm = rxx_win / max(rxx_win);  
         
         center = ceil(length(rxx_win) / 2); % m=0 (max.) is in the middle 
-        rxx_firstL = rxx_win_norm(center : center + 60 - 1); % Only first L AC scoeff. (from m=0)
+        rxx_firstL = rxx_win_norm(center : center + L - 1); % Only first L AC scoeff. (from m=0)
         
         DCT_coef_win = dct(rxx_firstL);
         DCT_coef_matrix(i, :) = DCT_coef_win(1:K); % Only first K DCT coeff. 

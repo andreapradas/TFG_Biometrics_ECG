@@ -9,11 +9,11 @@ end
 utils = ECGutils;
 global mit ptb;
 %% Select the DB to work with
-%numSubjects = 2;
-mit = 1; % Database MIT-BIH is used
-ptb = 0; % Database PTB is used
+numSubjects = 1;
+mit = 0; % Database MIT-BIH is used
+ptb = 1; % Database PTB is used
 gr = 0; % Flag to generate figures or not
-% min_duration = 90; 
+min_duration = 90; % In seconds
 snr_imp = [];
 ecg_segmented_storage = [];
 if mit
@@ -24,7 +24,7 @@ end
 if ptb
     ptb_path  = 'Database/physionet.org/files/ptb-diagnostic-ecg-database-1.0.0/';
     subjectFolders = dir(fullfile(ptb_path, 'patient*'));
-    numSubjects = length(subjectFolders);
+    %numSubjects = length(subjectFolders);
 end
 %% Process patients 
 for i = 1:numSubjects
@@ -38,7 +38,7 @@ for i = 1:numSubjects
 %                 warning("Recording %s is too short, it will be discarded.", subjectID);
 %                 continue;
 %             end
-            %raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
+            raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
         catch ME
             warning("Error reading the file %s.", subjectID);
         end
@@ -56,6 +56,7 @@ for i = 1:numSubjects
         subjectPath = fullfile(ptb_path, subjectFolders(i).name);
         recordings = dir(fullfile(subjectPath, '*.hea'));
         for j = 1:length(recordings)
+         %for j = 1:2
             recordName = recordings(j).name(1:end-4); 
             recordName = string(recordName);
             subjectID = string(subjectID);
@@ -92,8 +93,8 @@ if gr
 end
 
 %% Data storage
-save("ecg_segmented_storage_MIT_5ss.mat", "ecg_segmented_storage");
+%save("ecg_segmented_storage_MIT_5ss_15min.mat", "ecg_segmented_storage");
 
 %% Identification (kNN + RF)
-performance_struct = ECG_Identification(ecg_segmented_storage, gr);
+%performance_struct = ECG_Identification(ecg_segmented_storage, gr);
 

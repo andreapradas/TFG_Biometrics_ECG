@@ -10,7 +10,7 @@ function [performance_struct] = ECG_Identification(ecg_segmented_storage, gr)
     global ptb mit;
     %% Prepare the dataset
     [allFeatures, allLabels] = prepare_matrix_kNN(ecg_segmented_storage);
-    allLabels = categorical(allLabels);
+    %allLabels = categorical(allLabels);
     all_true_labels = [];
     all_predicted_labels = [];
 
