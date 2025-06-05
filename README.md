@@ -41,14 +41,6 @@ The pipeline follows these steps:
 ## 📩 Contact
 For any questions or contributions, feel free to reach out!
 
-Author: Andrea Pradas Agujetas  
-Institution: CEU San Pablo  
-Email: apradasagujetas@gmail.com
-
-
-## 📩 Contact
-For any questions or contributions, feel free to reach out!
-
 🔹 Author: Andrea Pradas Agujetas
 🔹 Institution: CEU San Pablo
 🔹 Email: apradasagujetas@gmail.com
