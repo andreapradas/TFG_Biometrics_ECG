@@ -19,7 +19,7 @@
 %   Sxx - Power Spectral Density of the signal (computed via Wiener-Khintchine theorem).
 %   lags - Lag values corresponding to the autocorrelation vector.s
 
-function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
+function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, qrs_i_raw, L, K, fs, gr)
     %% Autocorrelation Rxx[k]
     N = length(ecg_signal);
     rxx = xcorr(ecg_signal, 'biased');
@@ -28,16 +28,18 @@ function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
     % Normalize the autocorrelation
     rxx_norm = rxx / max(rxx); % Normalize by maximum amplitude usually Rxx[0]
 
-    %% Windowing 5 seconds ECG signal
-    N = 5 * fs;
-    num_windows = floor(length(ecg_signal) / N);
+    %% Windowing 5 beats ECG signal
+%     N = 5 * fs;
+%     num_windows = floor(length(ecg_signal) / N);
+    num_beats = length(qrs_i_raw);
+    num_windows = floor(num_beats / 5);
     DCT_coef_matrix = zeros(num_windows, K); 
 
     if gr
         figure;
         subplot(4,1,1);
         hold on;
-        title('(a) Windowed ECG Signal (5 Seconds)');
+        title('(a) Windowed ECG Signal (5 heartbeats)');
         xlabel('Time (ms)');
         ylabel('Voltage (mV)');
         grid on;
@@ -64,10 +66,12 @@ function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
         grid on;
     end
     for i = 1:num_windows
-        start_idx = (i - 1) * N + 1;
-        end_idx = start_idx + N - 1;
+        start_idx = qrs_i_raw((i-1)*5 + 1);
+        end_idx = qrs_i_raw(i*5);
+        if end_idx > length(ecg_signal)
+            break;
+        end
         ecg_win = ecg_signal(start_idx:end_idx);
-        
         rxx_win = xcorr(ecg_win, 'biased');
         rxx_win_norm = rxx_win / max(rxx_win);  
         
@@ -83,7 +87,7 @@ function [AC_DCT_coef, rxx_norm, lags] = ECG_AC_DCT(ecg_signal, L, K, fs, gr)
                 subplot(4,1,1);
                 plot(t_ecg, ecg_win, 'b');
     
-                t_ac = (0:(2*N-2)) / fs * 1000;  
+                t_ac = (0:(2*length(rxx_win_norm)/2-1)) / fs * 1000;  
                 subplot(4,1,2);
                 plot(t_ac, rxx_win_norm, 'b');
             end

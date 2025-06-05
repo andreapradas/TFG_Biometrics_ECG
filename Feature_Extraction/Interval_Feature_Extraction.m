@@ -28,7 +28,7 @@ function [interval_features_struct] = Interval_Feature_Extraction(ecg_filtered, 
     RR_times = t(qrs_i_raw(1:end-1));
 
     %% ECG segmentation into windows
-    window_duration = 5; % In seconds
+    window_duration = 10; % In seconds
     window_samples = fs * window_duration;
     num_windows = floor(length(ecg_filtered) / window_samples);
 
@@ -70,6 +70,8 @@ function [interval_features_struct] = Interval_Feature_Extraction(ecg_filtered, 
         interval_features_struct(i).RR_intervals = RR_intervals(i);
         interval_features_struct(i).AC_DCT_coef = AC_DCT_coef;
         interval_features_struct(i).DWT_features = DWT_feature;
+
+        %utils.plotTimeDomain(window_time, window_signal, 'Window 5 seconds', 'b');
     end
 
     %%

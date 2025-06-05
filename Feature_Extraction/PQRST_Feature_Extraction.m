@@ -36,7 +36,7 @@ function [pqrst_features_struct] = PQRST_Feature_Extraction(ecg_filtered, subjec
     % Prove that NO indexes exceed the signal legth
 
 
-    numBeats = min(length(FPT),length(RR_intervals)); % As there are differently calculated, could be unmatched nº of beats detected
+    numBeats = min(length(FPT), length(RR_intervals)); % As there are differently calculated, could be unmatched nº of beats detected
     ecg_segments = cell(numBeats, 1);
     pqrst_features_struct = struct();
 

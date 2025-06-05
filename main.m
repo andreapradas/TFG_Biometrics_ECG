@@ -7,7 +7,7 @@
 %     - Feature extraction (per recording or segment)
 %     - SNR improvement analysis
 %     - Storage of structured data for further identification
-%     - Identification using machine learning classifiers (kNN, RF)
+%     - Identification using machine learning classifier (kNN)
 %
 %   Author: Andrea Pradas
 %   Date: 05-06-25
@@ -23,89 +23,52 @@ end
 utils = ECGutils;
 global mit ptb;
 %% Select the DB to work with
-mit = 1; % Database MIT-BIH is used
-ptb = 0; % Database PTB is used
+mit = 0; % Database MIT-BIH is used
+ptb = 1; % Database PTB is used
+numBeats_win = 10;
+save_flag = 0; % Flag to save storage structures 
 gr = 0; % Flag to generate figures or not
 snr_imp = [];
-ecg_segmented_storage = [];
+ecg_segmented_features_storage = [];
 if mit
+    load("ecg_filtered_storage_MIT.mat", 'ecg_filtered_storage');
     mit_path = 'Database/physionet.org/files/mitdb/1.0.0/';
-    fileList = dir("*.hea"); 
+    fileList = dir(fullfile(mit_path, '*.hea')); 
     numSubjects = length(fileList);
-end
-if ptb
+    fs = 360;
+elseif ptb
+    load("ecg_filtered_storage_PTB.mat", 'ecg_filtered_storage');
     ptb_path  = 'Database/physionet.org/files/ptb-diagnostic-ecg-database-1.0.0/';
     subjectFolders = dir(fullfile(ptb_path, 'patient*'));
-    numSubjects = length(patientFolders);
+    %numSubjects = length(patientFolders);
+    % Eliminate recordings appearing just 1 time
+    ids = string(arrayfun(@(x) x.subjectID, ecg_filtered_storage, 'UniformOutput', false));
+    [uid, ~, idx] = unique(ids);
+    ecg_filtered_storage = ecg_filtered_storage(ismember(ids, uid(histcounts(idx, 1:numel(uid)+1) > 1)));
+    numSubjects = length(ecg_filtered_storage);
     index = 1; 
+    fs = 1000;
 end
-%% Process patients 
-for i = 1:numSubjects
-    if mit
-        subjectID = erase(fileList(i).name, ".hea");
-        subjectPath = fullfile(mit_path, fileList(i).name);
-        recordingPath = char(strrep(fullfile('./', subjectPath, subjectID),'\', '/')); % As wfdb is in /Utilities/mcode
-        try
-            [raw_ecg, fs] = rdsamp(recordingPath, [1]); 
-        catch ME
-            warning("Error reading the file %s.", subjectID);
-        end
-        try
-            [subject_ecg_features, snr_imp_i] = processECG(raw_ecg, subjectID, fs, gr);
-            ecg_segmented_storage(i).subjectID = subjectID;
-            ecg_segmented_storage(i).features = subject_ecg_features;
-            snr_imp = [snr_imp; snr_imp_i];
-        catch ME
-            warning("Error processing the ECG of %s: %s", subjectID, ME.message);
-        end
+
+%% Feature Extraction 
+
+for i=1:numSubjects
+    subjectID = ecg_filtered_storage(i).subjectID;
+    ecg_filtered_subject = ecg_filtered_storage(i).filtered_ecg;
+    [interval_features_struct] = Beats_Feature_Extraction(ecg_filtered_subject, numBeats_win, subjectID, fs, gr);
+    if isempty(fieldnames(interval_features_struct))
+        disp(['Skipping subject ', num2str(subjectID), ' due to empty features.']);
+        continue;
     end
-    if ptb
-        subjectID = erase(subjectFolders(i).name, "patient");
-        subjectPath = fullfile(ptb_path, subjectFolders(i).name);
-        recordings = dir(fullfile(subjectPath, '*.hea'));
-        for j = 1:length(recordings)
-            recordName = recordings(j).name(1:end-4); 
-            recordName = string(recordName);
-            subjectID = string(subjectID);
-            try
-                recordingPath = char(strrep(fullfile('./', subjectPath, recordName),'\', '/')); % As wfdb is in /Utilities/mcode
-                [raw_ecg, fs, ~] = rdsamp(recordingPath, [1]); 
-                % uniqueID = patientID + '_' + recordName; % To differ
-                % between recordings of the same subject
-            catch ME
-                warning("Error reading %s: %s", recordName, ME.message);
-            end
-            try 
-                [subject_ecg_features, snr_imp_i] = processECG(raw_ecg, subjectID, fs, gr);
-                ecg_segmented_storage(index).subjectID = subjectID;
-                ecg_segmented_storage(index).features = subject_ecg_features;
-                index = index + 1; % To avoid overwriting
-                snr_imp = [snr_imp; snr_imp_i];
-            catch ME
-                warning("Error processing the ECG of %s: %s", recordName, ME.message);
-            end
-        end    
-    end
+    interval_features_struct = interval_features_struct(:);
+    ecg_segmented_features_storage = [ecg_segmented_features_storage; interval_features_struct];
+    fprintf("Individual %s processed successfully.\n", subjectID);
 end
 
-%% Denoising performance metrics
-avg_SNR = mean(snr_imp, 1);
-if gr
-    fprintf('\n--- Mean SNR Improvement across all patients ---\n');
-    fprintf('Mean SNR_PLI_Imp: %.2f dB\n', avg_SNR(1));
-    fprintf('Mean SNR_BLW_Imp: %.2f dB\n', avg_SNR(2));
-    fprintf('Mean SNR_HF_Imp : %.2f dB\n', avg_SNR(3));
-end
+%% Save structure
+if save_flag
+    save("ecg_segmented_storage_MIT_1beatNOoverlapp.mat", "ecg_segmented_features_storage");
+end 
 
-%% Data storage
-save("patients_features.mat", "ecg_segmented_storage");
-
-%% Prepare data for Identification
-
-
-
-
-
-%% Identification (kNN + RF)
-%predictedLabel = ECG_Identification(ecg_segmented_storage, gr);
-
+%% Identification (kNN)
+predictedLabel = ECG_Identification(ecg_segmented_features_storage, gr);

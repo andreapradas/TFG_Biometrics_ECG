@@ -1,26 +1,27 @@
-%          Pan-Tompkin algorithm
-% Complete implementation of Pan-Tompkins algorithm
+% ECG_RR_interval detects QRS complexes in an ECG signal and extracts the raw R-peak indices and amplitudes.
 %
-%% Inputs
-% ecg : raw ecg vector signal 1d signal
-% fs : sampling frequency 
-% gr : flag to plot or not plot (set it 1 to have a plot or set it 0 not
-% to see any plots
-%% Outputs
-% qrs_amp_raw : amplitude of R waves amplitudes
-% qrs_i_raw : index of R waves
-% delay : number of samples which the signal is delayed due to the
-% filtering
+% This function implements a modified version of the Pan-Tompkins algorithm for QRS detection, including
+% bandpass filtering, derivative-based enhancement, squaring, and moving average. It dynamically adapts
+% thresholds for signal and noise levels to accurately locate R-peaks even under noisy conditions.
 %
+% Parameters:
+%   ecg_filtered_subject - The preprocessed (filtered) ECG signal (vector).
+%   fs - Sampling frequency of the ECG signal in Hz.
+%   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
+%
+% Returns:
+%   qrs_amp_raw - Amplitudes of detected R-peaks in the bandpass-filtered signal.
+%   qrs_i_raw   - Indices of detected R-peaks in the bandpass-filtered signal.
+%   delay       - Processing delay introduced by the filters and smoothing operations.
 
-function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
-    if ~isvector(ecg_signal)
+function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_filtered_subject,fs,gr)
+    if ~isvector(ecg_filtered_subject)
       error('ECG must be a row or column vector.');
     end
     if nargin < 3 % Verify the nº of input arguments
         gr = 1;   % By default the function will plot
     end
-    ecg_signal = ecg_signal(:); % Vectorize (column)
+    ecg_filtered_subject = ecg_filtered_subject(:); % Vectorize (column)
     
     %% Initialize Variables
     delay = 0;
@@ -33,7 +34,7 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
     %% Noise cancelation(Filtering)( 5-15 Hz)
     if fs == 200
         % Remove the mean of Signal
-        ecg_signal = ecg_signal - mean(ecg_signal);
+        ecg_filtered_subject = ecg_filtered_subject - mean(ecg_filtered_subject);
         %% Low Pass Filter  H(z) = ((1 - z^(-6))^2)/(1 - z^(-1))^2
         %It has come to my attention the original filter doesnt achieve 12 Hz
         %    b = [1 0 0 0 0 0 -2 0 0 0 0 0 1];
@@ -43,11 +44,11 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
         Wn = 12*2/fs;
         N = 3; % order of 3 less processing
         [a,b] = butter(N,Wn,'low');  % bandpass filtering
-        ecg_l = filtfilt(a,b,ecg_signal); 
+        ecg_l = filtfilt(a,b,ecg_filtered_subject); 
         ecg_l = ecg_l/ max(abs(ecg_l));
         if gr
             figure;
-            ax(1) = subplot(321);plot(ecg_signal);axis tight;title('Raw signal');
+            ax(1) = subplot(321);plot(ecg_filtered_subject);axis tight;title('Raw signal');
             ax(2)=subplot(322);plot(ecg_l);axis tight;title('Low pass filtered');
         end
         %% High Pass filter H(z) = (-1+32z^(-16)+z^(-32))/(1+z^(-1))
@@ -72,10 +73,10 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
         Wn=[f1 f2]*2/fs;  % cutt off based on fs
         N = 3;   % order of 3 less processing
         [a,b] = butter(N,Wn);  % bandpass filtering
-        ecg_h = filtfilt(a,b,ecg_signal);
+        ecg_h = filtfilt(a,b,ecg_filtered_subject);
         ecg_h = ecg_h/ max( abs(ecg_h));
         if gr
-            ax(1) = subplot(3,2,[1 2]);plot(ecg_signal);axis tight;title('Raw Signal');
+            ax(1) = subplot(3,2,[1 2]);plot(ecg_filtered_subject);axis tight;title('Raw Signal');
             ax(3)=subplot(323);plot(ecg_h);axis tight;title('Band Pass Filtered');
         end
     end
@@ -88,7 +89,7 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
         b = [1 2 0 -2 -1].*(1/8)*fs;   
     end
     
-    ecg_d = filtfilt(b,1,ecg_signal);
+    ecg_d = filtfilt(b,1,ecg_filtered_subject);
     ecg_d = ecg_d/max(ecg_d);
     if gr
         ax(4) = subplot(324);plot(ecg_d);
@@ -149,8 +150,8 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
     
     
     %% Initialize bandpath filter threshold(2 seconds of the bandpass signal)
-    THR_SIG1 = max(ecg_signal(1:2*fs))*1/3;                                          % 0.25 of the max amplitude 
-    THR_NOISE1 = mean(ecg_signal(1:2*fs))*1/2; 
+    THR_SIG1 = max(ecg_filtered_subject(1:2*fs))*1/3;                                          % 0.25 of the max amplitude 
+    THR_NOISE1 = mean(ecg_filtered_subject(1:2*fs))*1/2; 
     SIG_LEV1 = THR_SIG1;                                                        % Signal level in Bandpassed filter
     NOISE_LEV1 = THR_NOISE1;                                                    % Noise level in Bandpassed filter
     %% Thresholding and desicion rule 
@@ -159,14 +160,14 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
     Noise_Count = 0;                                                            % Noise Counter
     for i = 1 : LLp  
        %% Locate the corresponding peak in the filtered signal
-        if locs(i)-round(0.150*fs)>= 1 && locs(i)<= length(ecg_signal)
-              [y_i,x_i] = max(ecg_signal(locs(i)-round(0.150*fs):locs(i)));
+        if locs(i)-round(0.150*fs)>= 1 && locs(i)<= length(ecg_filtered_subject)
+              [y_i,x_i] = max(ecg_filtered_subject(locs(i)-round(0.150*fs):locs(i)));
            else
               if i == 1
-                [y_i,x_i] = max(ecg_signal(1:locs(i)));
+                [y_i,x_i] = max(ecg_filtered_subject(1:locs(i)));
                 ser_back = 1;
-              elseif locs(i)>= length(ecg_signal)
-                [y_i,x_i] = max(ecg_signal(locs(i)-round(0.150*fs):end));
+              elseif locs(i)>= length(ecg_filtered_subject)
+                [y_i,x_i] = max(ecg_filtered_subject(locs(i)-round(0.150*fs):end));
               end       
         end       
       %% Update the heart_rate 
@@ -204,10 +205,10 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
                    qrs_c(Beat_C) = pks_temp;
                    qrs_i(Beat_C) = locs_temp;      
                   % ------------- Locate in Filtered Sig ------------- %
-                   if locs_temp <= length(ecg_signal)
-                      [y_i_t,x_i_t] = max(ecg_signal(locs_temp-round(0.150*fs):locs_temp));
+                   if locs_temp <= length(ecg_filtered_subject)
+                      [y_i_t,x_i_t] = max(ecg_filtered_subject(locs_temp-round(0.150*fs):locs_temp));
                    else
-                      [y_i_t,x_i_t] = max(ecg_signal(locs_temp-round(0.150*fs):end));
+                      [y_i_t,x_i_t] = max(ecg_filtered_subject(locs_temp-round(0.150*fs):end));
                    end
                   % ----------- Band pass Sig Threshold ------------------%
                    if y_i_t > THR_NOISE1 
@@ -325,7 +326,7 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
      if gr
        figure;
        az(1)=subplot(311);
-       plot(ecg_signal);
+       plot(ecg_filtered_subject);
        title('QRS on Filtered Signal');
        axis tight;
        hold on,scatter(qrs_i_raw,qrs_amp_raw,'m');
@@ -339,11 +340,11 @@ function [qrs_amp_raw,qrs_i_raw,delay]=ECG_RR_interval(ecg_signal,fs,gr)
        hold on,plot(locs,SIGL_buf,'LineWidth',2,'Linestyle','-.','color','r');
        hold on,plot(locs,THRS_buf,'LineWidth',2,'Linestyle','-.','color','g');
        az(3) = subplot(313);
-       plot(ecg_signal-mean(ecg_signal));
+       plot(ecg_filtered_subject-mean(ecg_filtered_subject));
        title('Pulse train of the found QRS on ECG signal');
        axis tight;
        line(repmat(qrs_i_raw,[2 1]),...
-           repmat([min(ecg_signal-mean(ecg_signal))/2; max(ecg_signal-mean(ecg_signal))/2],size(qrs_i_raw)),...
+           repmat([min(ecg_filtered_subject-mean(ecg_filtered_subject))/2; max(ecg_filtered_subject-mean(ecg_filtered_subject))/2],size(qrs_i_raw)),...
            'LineWidth',2.5,'LineStyle','-.','Color','r');
        linkaxes(az,'x');
        zoom on;

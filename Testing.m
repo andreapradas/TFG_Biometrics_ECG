@@ -1,5 +1,25 @@
-%% Testing script
-
+% Testing script for ECG processing and identification pipeline
+%
+% This script performs the following:
+% 1. Adds necessary paths for utilities and datasets.
+% 2. Selects the database (MIT-BIH or PTB) to process ECG recordings.
+% 3. Iterates over all subjects/recordings in the selected database.
+% 4. Reads raw ECG signals and applies a minimum duration filter.
+% 5. Calls process_ECG() to filter, normalize, and extract features.
+% 6. Optionally saves filtered ECG and features.
+% 7. Computes average SNR improvement metrics across subjects.
+% 8. Performs heartbeat and human identification using k-NN classifier via ECG_Identification().
+%
+% Configurable parameters:
+%   mit, ptb          - Flags to select MIT-BIH or PTB databases.
+%   numBeats_win      - Number of beats per ECG window used for feature extraction.
+%   gr                - Flag to enable graphical outputs.
+%   save_flag         - Flag to enable saving of extracted data.
+%   min_duration      - Minimum ECG recording length in seconds to process.
+%
+% Outputs:
+%   performance_struct - Struct containing classification performance metrics from ECG_Identification.
+%
 clc; clear all;
 addpath(genpath('..'));% Aggregate the main folder + directories
 
@@ -9,22 +29,24 @@ end
 utils = ECGutils;
 global mit ptb;
 %% Select the DB to work with
-numSubjects = 1;
+%numSubjects = 2;
 mit = 0; % Database MIT-BIH is used
 ptb = 1; % Database PTB is used
+numBeats_win = 5; % Beats per ECG window 
 gr = 0; % Flag to generate figures or not
+save_flag = 0; % Flag to save storage structures 
 min_duration = 90; % In seconds
 snr_imp = [];
-ecg_segmented_storage = [];
+ecg_segmented_features_storage = [];
+ecg_filtered_storage = struct('subjectID', {}, 'filtered_ecg', {});
 if mit
     mit_path = 'Database/physionet.org/files/mitdb/1.0.0/';
     fileList = dir(fullfile(mit_path, '*.hea')); 
     numSubjects = length(fileList);
-end
-if ptb
+elseif ptb
     ptb_path  = 'Database/physionet.org/files/ptb-diagnostic-ecg-database-1.0.0/';
     subjectFolders = dir(fullfile(ptb_path, 'patient*'));
-    %numSubjects = length(subjectFolders);
+    numSubjects = length(subjectFolders);
 end
 %% Process patients 
 for i = 1:numSubjects
@@ -38,14 +60,18 @@ for i = 1:numSubjects
 %                 warning("Recording %s is too short, it will be discarded.", subjectID);
 %                 continue;
 %             end
-            raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
+         %raw_ecg = raw_ecg(1: min_duration * fs); % To achieve a consistent dimension of arrays being concatenated
         catch ME
             warning("Error reading the file %s.", subjectID);
         end
         try
-            [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+            [pqrst_features_struct, ecg_filtered, snr_imp_i] = process_ECG(raw_ecg, numBeats_win, subjectID, fs, gr);
+            if save_flag
+                ecg_filtered_storage(end+1).subjectID = subjectID;
+                ecg_filtered_storage(end).filtered_ecg = ecg_filtered;
+            end
             pqrst_features_struct = pqrst_features_struct(:);
-            ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
+            ecg_segmented_features_storage = [ecg_segmented_features_storage; pqrst_features_struct];
             snr_imp = [snr_imp; snr_imp_i];
         catch ME
             warning("Error processing the ECG of %s: %s", subjectID, ME.message);
@@ -72,9 +98,13 @@ for i = 1:numSubjects
                 warning("Error reading %s: %s", recordName, ME.message);
             end
             try 
-                [pqrst_features_struct, snr_imp_i] = process_ECG(raw_ecg, subjectID, fs, gr);
+                [~, ecg_filtered, snr_imp_i] = process_ECG(raw_ecg, numBeats_win, subjectID, fs, gr);
+                if save_flag
+                    ecg_filtered_storage(end+1).subjectID = subjectID;
+                    ecg_filtered_storage(end).filtered_ecg = ecg_filtered;
+                end
                 pqrst_features_struct = pqrst_features_struct(:);
-                ecg_segmented_storage = [ecg_segmented_storage; pqrst_features_struct];
+                ecg_segmented_features_storage = [ecg_segmented_features_storage; pqrst_features_struct];
                 snr_imp = [snr_imp; snr_imp_i];
             catch ME
                 warning("Error processing the ECG of %s: %s", recordName, ME.message);
@@ -93,8 +123,11 @@ if gr
 end
 
 %% Data storage
-%save("ecg_segmented_storage_MIT_5ss_15min.mat", "ecg_segmented_storage");
+if save_flag
+    save("ecg_segmented_storage_MIT_5beatsNOoverlapping.mat", "ecg_segmented_features_storage");
+    %save("ecg_filtered_storage_PTB.mat","ecg_filtered_storage");
+end
 
-%% Identification (kNN + RF)
-%performance_struct = ECG_Identification(ecg_segmented_storage, gr);
+%% Identification (kNN)
+performance_struct = ECG_Identification(ecg_segmented_features_storage, gr);
 

@@ -11,7 +11,7 @@
 %   gr - Boolean flag to generate plots (1 = plot, 0 = no plot).
 %
 % Returns:
-%   patient_ecg_features - A structure containing extracted ECG features with the fields:
+%   subject_ecg_features - A structure containing extracted ECG features with the fields:
 %       .RR_intervals - Vector of RR intervals (in seconds) computed from R-peaks.
 %       .AC_DCT_coef - Feature vector from autocorrelation and DCT method.
 %       .DWT_features - Feature vector from the Discrete Wavelet Transform.

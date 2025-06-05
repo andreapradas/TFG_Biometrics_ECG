@@ -17,23 +17,35 @@
 %                         at the final decomposition level of the PQRST segment.
 
 function [DWT_feature] = PQRST_DWT(ecg_segment, wavelet_name, decomposition_level, fs, gr)
-    % Perform the Discrete Wavelet Transform (DWT) decomposition
+    global mit ptb;
+    %% Perform the Discrete Wavelet Transform (DWT) decomposition
     [C, L] = wavedec(ecg_segment, decomposition_level, wavelet_name);
 
     % Extract approximation coefficients (A)
     approx_coeffs = appcoef(C, L, wavelet_name, decomposition_level);
     approx_coeffs = approx_coeffs(:);
-
-    DWT_feature = approx_coeffs;
-    
     % Extract detail coefficients (D1 to Dn)
     detail_coeffs = cell(1, decomposition_level);
     for i = 1:decomposition_level
         detail_coeffs{i} = detcoef(C, L, i);
         detail_coeffs{i} = detail_coeffs{i}(:);
     end
-
-
+    if mit
+        if decomposition_level == 5
+            a5 = reshape(approx_coeffs(1:9), 1, []);
+            d5 = reshape(detail_coeffs{5}(1:9), 1, []);
+            d4 = reshape(detail_coeffs{4}(1:18), 1, []);
+            DWT_feature = [a5, d5, d4];
+        else
+            DWT_feature = approx_coeffs;
+        end
+    elseif ptb
+        if decomposition_level == 5
+            DWT_feature = [approx_coeffs(1:9), detail_coeffs{5}(1:9)];
+        elseif decomposition_level == 1
+            DWT_feature = approx_coeffs;
+        end
+    end
     if gr
         figure;
         subplot(decomposition_level+1, 1, 1);

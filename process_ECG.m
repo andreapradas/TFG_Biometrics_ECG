@@ -1,27 +1,25 @@
-% process_ECG processes a raw ECG signal by normalizing, filtering, and extracting features.
+% process_ECG processes raw ECG data to extract fiducial features after filtering and normalization.
 %
-% This function first normalizes the raw ECG signal depending on the dataset type (MIT-BIH or PTB),
-% then applies a complete filtering pipeline to remove artifacts such as baseline wander, 
-% powerline interference, and high-frequency noise. After filtering, it evaluates the improvement 
-% in signal quality and extracts features from each heartbeat using the PQRST complex.
+% This function normalizes the input ECG signal, removes DC offset,
+% applies comprehensive filtering to eliminate powerline interference, baseline wander, and other noise,
+% and finally extracts heartbeat features using beat segmentation.
+% It also evaluates the signal-to-noise ratio (SNR) improvement after filtering.
+% Optional plots visualize the signal at different processing stages and frequency domain information.
 %
 % Parameters:
-%   raw_ecg   - Raw ECG signal (vector).
-%   subjectID - String identifying the subject or recording.
-%   fs        - Sampling frequency of the ECG signal in Hz.
-%   gr        - Boolean flag to enable plotting (1 = plot, 0 = no plot).
+%   raw_ecg   - Raw ECG signal vector.
+%   numBeats  - Number of beats to segment and analyze.
+%   subjectID - Identifier for the subject (used in messages).
+%   fs        - Sampling frequency in Hz.
+%   gr        - Boolean flag to enable graphical plots (1 = plot, 0 = no plot).
 %
 % Returns:
-%   pqrst_features_struct - A structure array of features for each heartbeat, with fields:
-%       - subjectID        : ID of the subject
-%       - RR_intervals     : RR interval (in seconds)
-%       - AC_DCT_coef      : Autocorrelation-DCT features
-%       - DWT_features     : Discrete Wavelet Transform features
+%   pqrst_features_struct - Struct containing extracted ECG fiducial features per beat.
+%   ecg_filtered         - Filtered ECG signal after denoising.
+%   snr_imp              - Signal-to-noise ratio improvement metrics after filtering.
 %
-%   snr_imp               - A vector with SNR improvement metrics after filtering, in the order:
-%       [SNR_PLI_Imp, SNR_BLW_Imp, SNR_HF_Imp]
 
-function [pqrst_features_struct, snr_imp] = process_ECG(raw_ecg, subjectID, fs, gr)
+function [pqrst_features_struct, ecg_filtered, snr_imp] = process_ECG(raw_ecg, numBeats, subjectID, fs, gr)
     utils = ECGutils;
     global mit ptb;
     %% Normalization + DC Ofssset removal
@@ -109,7 +107,7 @@ function [pqrst_features_struct, snr_imp] = process_ECG(raw_ecg, subjectID, fs, 
 
     %% Feature Extraction (RR interval + AC/DCT + Wavelet Transform)
     %pqrst_features_struct = PQRST_Feature_Extraction(ecg_filtered, subjectID, fs, gr);
-    pqrst_features_struct = Interval_Feature_Extraction(ecg_filtered, subjectID, fs, gr);
-
+    %pqrst_features_struct = Interval_Feature_Extraction(ecg_filtered, subjectID, fs, gr);
+    pqrst_features_struct = Beats_Feature_Extraction(ecg_filtered, numBeats, subjectID, fs, gr);
     fprintf("Individual %s processed successfully.\n", subjectID);
 end
